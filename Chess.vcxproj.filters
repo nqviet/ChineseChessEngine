@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{b6ca5fc6-4d0b-41b0-9031-82ebfb53b50b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\bitboard.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\types.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\position.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\misc.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tt.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\movegen.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\movepick.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\material.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\endgame.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\evaluate.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pawns.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_win32.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\search.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\uci.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\timeman.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\bitboard.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\position.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\psqt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\misc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\movegen.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\movepick.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\endgame.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bitbase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\evaluate.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pawns.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\search.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uci.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ucioption.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\timeman.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
