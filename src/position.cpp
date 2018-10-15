@@ -7,12 +7,12 @@
 #include "tt.h"
 #include "misc.h"
 
-namespace PSQT 
+namespace PSQT
 {
 	extern Score psq[PIECE_NB][SQUARE_NB];
 }
 
-namespace Zobrist 
+namespace Zobrist
 {
 	Key psq[PIECE_NB][SQUARE_NB];
 	Key side;
@@ -29,20 +29,16 @@ const std::string PieceToChar(" PNBCRAK pnbcrak");
 
 template<int Pt>
 PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
-	Bitboard& occupied, Bitboard& attackers) 
+	Bitboard& occupied, Bitboard& attackers)
 {
 	Bitboard b = stmAttackers & bb[Pt];
 	if (!b)
 		return min_attacker<Pt + 1>(bb, to, stmAttackers, occupied, attackers);
 
 	occupied ^= b & ~(b - 1);
-
-	if (Pt == SOLDIER || Pt == CHARIOT)
-		attackers |= attacks_bb<CHARIOT>(to, occupied) & bb[CHARIOT];
-	if (Pt == CANNON)
-		attackers |= attacks_bb<CANNON>(to, occupied) & bb[CANNON];
-
+	attackers |= attacks_bb<PieceType(Pt)>(to, occupied) & bb[Pt];
 	attackers &= occupied; // After X-ray that may add already processed pieces
+
 	return (PieceType)Pt;
 }
 
@@ -60,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, const Position& pos)
 	std::string s = "";
 	std::string c;
 	for (Rank r = RANK_10; r >= RANK_1; --r)
-	{		
+	{
 		for (File f = FILE_A; f <= FILE_I; ++f)
 		{
 			c = PieceToChar[pos.piece_on(make_square(f, r))];
@@ -87,7 +83,7 @@ std::ostream& operator<<(std::ostream& os, const Position& pos)
 /// Position::init() initializes at startup the various arrays used to compute
 /// hash keys.
 
-void Position::init() 
+void Position::init()
 {
 	PRNG rng(1070372);
 
@@ -118,12 +114,12 @@ Position& Position::set(const std::string& fenStr, StateInfo* si, Thread* th)
       noted using digits 1 through 9 (the number of blank squares), and "/"
       separates ranks.
 
-	 2) Active color. "w" means white moves next, "b" means black.	 
+	 2) Active color. "w" means white moves next, "b" means black.
 
 	 3) Fullmove number. The number of the full move. It starts at 1, and is
 	 incremented after Black's move.
 */
-	unsigned char col, row, token;
+	unsigned char token;
 	size_t idx;
 	Square sq = PT_A10;
 	std::istringstream ss(fenStr);
@@ -152,7 +148,7 @@ Position& Position::set(const std::string& fenStr, StateInfo* si, Thread* th)
 	// 2. Active color
 	ss >> token;
 	sideToMove = (token == 'w' ? WHITE : BLACK);
-	ss >> token;	
+	ss >> token;
 
 	// 3. Halfmove clock and fullmove number
 	ss >> std::skipws >> gamePly;
@@ -165,13 +161,13 @@ Position& Position::set(const std::string& fenStr, StateInfo* si, Thread* th)
 
 /// Position::set_check_info() sets king attacks to detect if a move gives check
 
-void Position::set_check_info(StateInfo* si) const 
+void Position::set_check_info(StateInfo* si) const
 {
 	si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK, CHARIOT), square<GENERAL>(WHITE), si->pinnersForKing[WHITE]);
 	si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE, CHARIOT), square<GENERAL>(BLACK), si->pinnersForKing[BLACK]);
 
-	si->blockersForKing[WHITE] |= cannon_blockers(pieces(BLACK, CANNON), square<GENERAL>(WHITE), si->pinnersForKing[WHITE]);
-	si->blockersForKing[BLACK] |= cannon_blockers(pieces(WHITE, CANNON), square<GENERAL>(BLACK), si->pinnersForKing[BLACK]);
+	si->blockersForKing[WHITE] |= canon_blockers(pieces(BLACK, CANON), square<GENERAL>(WHITE), si->pinnersForKing[WHITE]);
+	si->blockersForKing[BLACK] |= canon_blockers(pieces(WHITE, CANON), square<GENERAL>(BLACK), si->pinnersForKing[BLACK]);
 
 	si->blockersForKing[WHITE] |= horse_blockers(pieces(BLACK, HORSE), square<GENERAL>(WHITE), si->fixedPinnersForKing[WHITE]);
 	si->blockersForKing[BLACK] |= horse_blockers(pieces(WHITE, HORSE), square<GENERAL>(BLACK), si->fixedPinnersForKing[BLACK]);
@@ -179,9 +175,9 @@ void Position::set_check_info(StateInfo* si) const
 	Square ksq = square<GENERAL>(~sideToMove);
 
 	si->checkSquares[SOLDIER]	= attacks_from<SOLDIER>(ksq, ~sideToMove);
-	si->checkSquares[HORSE]		= attacks_from<HORSE>(ksq);
-	si->checkSquares[CANNON]	= attacks_from<CANNON>(ksq);
-	si->checkSquares[CHARIOT]	= attacks_from<CHARIOT>(ksq);	
+	si->checkSquares[HORSE]		= horses_to(ksq);
+	si->checkSquares[CANON]	= attacks_from<CANON>(ksq);
+	si->checkSquares[CHARIOT]	= attacks_from<CHARIOT>(ksq);
 	si->checkSquares[GENERAL]	= 0;
 }
 
@@ -259,7 +255,7 @@ const std::string Position::fen() const
 /// Position::game_phase() calculates the game phase interpolating total non-pawn
 /// material between endgame and midgame limits.
 
-Phase Position::game_phase() const 
+Phase Position::game_phase() const
 {
 
 	Value npm = st->nonPawnMaterial[WHITE] + st->nonPawnMaterial[BLACK];
@@ -276,7 +272,7 @@ Phase Position::game_phase() const
 /// a pinned or a discovered check piece, according if its color is the opposite
 /// or the same of the color of the slider.
 
-Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const 
+Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const
 {
 	Bitboard result = 0;
 	pinners = 0;
@@ -299,12 +295,12 @@ Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners
 	return result;
 }
 
-Bitboard Position::cannon_blockers(Bitboard sliders, Square s, Bitboard& pinners) const
+Bitboard Position::canon_blockers(Bitboard sliders, Square s, Bitboard& pinners) const
 {
 	Bitboard result = 0;
 	pinners = 0;
 
-	// Snipers are cannons that attack 's' when a piece is removed
+	// Snipers are canons that attack 's' when a piece is removed
 	Bitboard snipers = (PseudoAttacks[CHARIOT][s]) & sliders;
 
 	while (snipers)
@@ -315,14 +311,14 @@ Bitboard Position::cannon_blockers(Bitboard sliders, Square s, Bitboard& pinners
 		int pcnt = popcount(b);
 		if (pcnt == 2)
 		{
-			result |= b;			
-			
+			result |= b;
+
 			while (b)
 			{
 				Square c = pop_lsb(&b);
 				if (SquareBB[c] & pieces(color_of(piece_on(s))))
 					pinners |= c;
-			}			
+			}
 		}
 	}
 	return result;
@@ -330,7 +326,7 @@ Bitboard Position::cannon_blockers(Bitboard sliders, Square s, Bitboard& pinners
 
 Bitboard Position::horse_blockers(Bitboard sliders, Square s, Bitboard& pinners) const
 {
-	Bitboard result = 0;
+	Bitboard result;
 	pinners = 0;
 
 	// Snipers are horses that attack 's' when a piece is removed
@@ -341,11 +337,13 @@ Bitboard Position::horse_blockers(Bitboard sliders, Square s, Bitboard& pinners)
 		Square sniperSq = pop_lsb(&snipers);
 
 		Square dir = DIR_NONE;
+		// Calculate the horse direction to the square
 		if (rank_of(s) == rank_of(sniperSq) + 2) dir = NORTH;
 		else if (rank_of(s) == rank_of(sniperSq) - 2) dir = SOUTH;
 		else if (file_of(s) == file_of(sniperSq) + 2) dir = EAST;
 		else if (file_of(s) == file_of(sniperSq) - 2) dir = WEST;
 
+		// Check if there is a blocking piece
 		Bitboard b = SquareBB[sniperSq + dir] & pieces();
 		if (b)
 		{
@@ -358,17 +356,48 @@ Bitboard Position::horse_blockers(Bitboard sliders, Square s, Bitboard& pinners)
 	return result;
 }
 
+/// Return a bitboard of all horse pieces which attack a given square.
+
+Bitboard Position::horses_to(Square s, Bitboard occupied) const
+{
+	Bitboard result;
+	Bitboard horses = attacks_bb<HORSE>(s, 0) & pieces(HORSE);
+	
+	while (horses)
+	{
+		Square horseSq = pop_lsb(&horses);
+
+		Square dir = DIR_NONE;
+		// Calculate the horse direction to the square
+		if (rank_of(s) == rank_of(horseSq) + 2) dir = NORTH;
+		else if (rank_of(s) == rank_of(horseSq) - 2) dir = SOUTH;
+		else if (file_of(s) == file_of(horseSq) + 2) dir = EAST;
+		else if (file_of(s) == file_of(horseSq) - 2) dir = WEST;
+
+		// Check if there is a blocking piece
+		Bitboard b = SquareBB[horseSq + dir] & pieces();
+		if (!b)
+		{
+			result |= horseSq;
+		}
+	}
+	
+	return result;
+}
+
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
 /// given square. Slider attacks use the occupied bitboard to indicate occupancy.
 
-Bitboard Position::attackers_to(Square s, Bitboard occupied) const 
+Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 {
 
-	return  (attacks_from<SOLDIER>(s, BLACK)    & pieces(WHITE, SOLDIER))
-		| (attacks_from<SOLDIER	>(s, WHITE)		& pieces(BLACK, SOLDIER))
-		| (attacks_bb<HORSE		>(s, occupied)	& pieces(HORSE))
+	return (attacks_from<SOLDIER>(s, BLACK)     & pieces(WHITE, SOLDIER) & file_bb(s))
+		| (attacks_from<SOLDIER >(s, WHITE)     & pieces(WHITE, SOLDIER) & rank_bb(s))
+		| (attacks_from<SOLDIER	>(s, WHITE)		& pieces(BLACK, SOLDIER) & file_bb(s))
+		| (attacks_from<SOLDIER	>(s, BLACK)		& pieces(BLACK, SOLDIER) & rank_bb(s))
+		| (horses_to			 (s, occupied)	& pieces(HORSE))
 		| (attacks_bb<CHARIOT	>(s, occupied)	& pieces(CHARIOT))
-		| (attacks_bb<CANNON	>(s, occupied)	& pieces(CANNON))
+		| (attacks_bb<CANON	>(s, occupied)	& pieces(CANON))
 		| (attacks_bb<ELEPHANT  >(s, occupied)	& pieces(ELEPHANT))
 		| (attacks_from<ADVISOR	>(s)			& pieces(ADVISOR))
 		| (attacks_from<GENERAL	>(s)			& pieces(GENERAL));
@@ -380,38 +409,42 @@ bool Position::legal(Move m) const
 {
 	Color us = sideToMove;
 	Square from = from_sq(m);
-	Square to = to_sq(m);	
+	Square to = to_sq(m);
 
 	// If the moving piece is a king, check whether the destination
 	// square is attacked by the opponent.
 	if (type_of(piece_on(from)) == GENERAL)
 		return !(attackers_to(to) & pieces(~us));
 
+	// Check if move to space in between the canon and king
 	Square ksq = square<GENERAL>(us);
-	Bitboard kingFacedCannons = attacks_from<CHARIOT>(ksq) & pieces(~us, CANNON);
-	while (kingFacedCannons)
+	Bitboard canonsFacingToKing = attacks_from<CHARIOT>(ksq) & pieces(~us, CANON);
+	while (canonsFacingToKing)
 	{
-		Square cannonSq = pop_lsb(&kingFacedCannons);
-		if (between_bb(cannonSq, ksq) & to)
+		Square canonSq = pop_lsb(&canonsFacingToKing);
+		if (between_bb(canonSq, ksq) & to)
 			return false;
 	}
 
-	if (checkers() && type_of(piece_on(lsb(checkers()))) == CANNON 
-		&& (!((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to) || aligned(from, to, lsb(checkers()))))
+	// Check if the move interupts canon 
+	Bitboard checker = checkers();
+	Square checkerSq = lsb(checker);
+	if (checker && type_of(piece_on(checkerSq)) == CANON
+		&& (!((between_bb(checkerSq, square<GENERAL>(us)) | checkerSq) & to) || aligned(from, to, checkerSq)))
 		return false;
 
 	if (fixedPinned_pieces(us) & from)
 		return false;
 
 	// A non-king move is legal if and only if it is not pinned or it
-	// is moving along the ray towards or away from the king.	
+	// is moving along the ray towards or away from the king.
 	if((pinned_pieces(us) & from) && !aligned(from, to, square<GENERAL>(us)))
 		return false;
 
-	return !receives_cannon_check(m);
+	return !receives_canon_check(m);
 
 	//std::cout << "legal: " << ret << " checker: " << popcount(checkers())
-	//								<< " cannon: " << bool( type_of(piece_on(lsb(checkers()))) == CANNON)
+	//								<< " canon: " << bool( type_of(piece_on(lsb(checkers()))) == CANON)
 	//								<< " between-to: " << bool((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to)
 	//								<< " align: " << bool (aligned(from, to, lsb(checkers())))
 	//								<< std::endl;
@@ -438,7 +471,7 @@ bool Position::pseudo_legal(const Move m) const
 		return false;
 
 	if (!(attacks_from(pc, from) & to))
-		return false;	
+		return false;
 
 	// Evasions generator already takes care to avoid some kind of illegal moves
 	// and legal() relies on this. We therefore have to take care that the same
@@ -452,7 +485,7 @@ bool Position::pseudo_legal(const Move m) const
 				return false;
 
 			// Our move must be a blocking evasion or a capture of the checking piece
-			if (!((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to))				
+			if (!((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to))
 				return false;
 		}
 		// In case of king moves under check we have to remove king so as to catch
@@ -466,16 +499,16 @@ bool Position::pseudo_legal(const Move m) const
 
 /// Position::gives_check() tests whether a pseudo-legal move gives a check
 
-bool Position::gives_check(Move m) const 
+bool Position::gives_check(Move m) const
 {
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 
 	// Is there a direct check?
-	if (type_of(piece_on(from)) != CANNON && (st->checkSquares[type_of(piece_on(from))] & to))
+	if (type_of(piece_on(from)) != CANON && (st->checkSquares[type_of(piece_on(from))] & to))
 		return true;
-	
-	if (gives_cannon_check(m))
+
+	if (gives_canon_check(m))
 		return true;
 
 	// Is there a discovered check?
@@ -486,38 +519,38 @@ bool Position::gives_check(Move m) const
 	return false;
 }
 
-/// Position::gives_check() tests whether a pseudo-legal cannon move gives a check
+/// Position::gives_check() tests whether a pseudo-legal canon move gives a check
 
-bool Position::gives_cannon_check(Move m) const
+bool Position::gives_canon_check(Move m) const
 {
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 	Square ksq = square<GENERAL>(~sideToMove);
 
 	Bitboard occupied = byTypeBB[ALL_PIECES] ^ from | to;
-	Bitboard attackers = attacks_bb<CANNON>(ksq, occupied);
-	Bitboard cannons = pieces(sideToMove, CANNON);
-	if (type_of(piece_on(from)) == CANNON)
-		cannons = cannons ^ from | to;
+	Bitboard attackers = attacks_bb<CANON>(ksq, occupied);
+	Bitboard canons = pieces(sideToMove, CANON);
+	if (type_of(piece_on(from)) == CANON)
+		canons = canons ^ from | to;
 
-	return attackers & cannons;
+	return attackers & canons;
 }
 
-/// Position::gives_check() tests whether a pseudo-legal cannon move receives a check
+/// Position::gives_check() tests whether a pseudo-legal canon move receives a check
 
-bool Position::receives_cannon_check(Move m) const
+bool Position::receives_canon_check(Move m) const
 {
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 	Square ksq = square<GENERAL>(sideToMove);
 
 	Bitboard occupied = byTypeBB[ALL_PIECES] ^ from | to;
-	Bitboard attackers = attacks_bb<CANNON>(ksq, occupied);
-	Bitboard cannons = pieces(~sideToMove, CANNON);
-	if (type_of(piece_on(to)) == CANNON)
-		cannons = cannons ^ to;
+	Bitboard attackers = attacks_bb<CANON>(ksq, occupied);
+	Bitboard canons = pieces(~sideToMove, CANON);
+	if (type_of(piece_on(to)) == CANON)
+		canons = canons ^ to;
 
-	return attackers & cannons;
+	return attackers & canons;
 }
 
 /// Position::do_move() makes a move, and saves all information necessary
@@ -526,7 +559,7 @@ bool Position::receives_cannon_check(Move m) const
 
 void Position::do_move(Move m, StateInfo& newSt, bool givesCheck)
 {
-	//std::cout << "do_move: " << PieceToChar[piece_on(from_sq(m))] << "." << sqToStr(m) 
+	//std::cout << "do_move: " << PieceToChar[piece_on(from_sq(m))] << "." << sqToStr(m)
 	//		<< " givesCheck: " << givesCheck
 	//		<< std::endl;
 	//std::cout << fen() << std::endl;
@@ -544,7 +577,7 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck)
 
 	// Increment ply counters. In particular, rule50 will be reset to zero later on
 	// in case of a capture or a pawn move.
-	++gamePly;	
+	++gamePly;
 	++st->pliesFromNull;
 
 	Color us = sideToMove;

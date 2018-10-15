@@ -815,7 +815,7 @@ namespace
 
 			givesCheck = type_of(move) == NORMAL && !pos.discovered_check_candidates()
 				? (pos.check_squares(type_of(pos.piece_on(from_sq(move)))) & to_sq(move))					
-					&& (type_of(pos.piece_on(from_sq(move))) != CANNON || pos.gives_cannon_check(move))
+					&& (type_of(pos.piece_on(from_sq(move))) != CANON || pos.gives_canon_check(move))
 				: pos.gives_check(move);
 
 			moveCountPruning = depth < 16 * ONE_PLY
@@ -1234,7 +1234,7 @@ namespace
 
 			givesCheck = type_of(move) == NORMAL && !pos.discovered_check_candidates()
 				? (pos.check_squares(type_of(pos.piece_on(from_sq(move)))) & to_sq(move)) 
-					&& (type_of(pos.piece_on(from_sq(move))) != CANNON || pos.gives_cannon_check(move))					
+					&& (type_of(pos.piece_on(from_sq(move))) != CANON || pos.gives_canon_check(move))					
 				: pos.gives_check(move);
 
 			// Futility pruning

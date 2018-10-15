@@ -385,12 +385,12 @@ template<PieceType Pt>
 inline unsigned magic_index(Square s, Bitboard occupied)
 {
 	extern Bitboard ChariotMasks[SQUARE_NB];
-	extern Bitboard CannonMasks[SQUARE_NB];
+	extern Bitboard CanonMasks[SQUARE_NB];
 	extern Bitboard HorseMasks[SQUARE_NB];
 	extern Bitboard ElephantMasks[SQUARE_NB];
 
 	Bitboard* const Masks = Pt == CHARIOT ? ChariotMasks :
-							Pt == CANNON ? CannonMasks :
+							Pt == CANON ? CanonMasks :
 							Pt == HORSE ? HorseMasks : ElephantMasks;
 
 	return unsigned(pext_si128(occupied.v, Masks[s].v));
@@ -401,14 +401,14 @@ inline Bitboard attacks_bb(Square s, Bitboard occupied)
 {
 
 	extern Bitboard* ChariotAttacks[SQUARE_NB];
-	extern Bitboard* CannonAttacks[SQUARE_NB];
+	extern Bitboard* CanonAttacks[SQUARE_NB];
 	extern Bitboard* HorseAttacks[SQUARE_NB];
 	extern Bitboard* ElephantAttacks[SQUARE_NB];
 
 	unsigned idx = magic_index<Pt>(s, occupied);
 
 	return (Pt == CHARIOT ? ChariotAttacks :
-			Pt == CANNON ? CannonAttacks :
+			Pt == CANON ? CanonAttacks :
 			Pt == HORSE ? HorseAttacks : ElephantAttacks)[s][idx];
 }
 
@@ -417,7 +417,7 @@ inline Bitboard attacks_bb(Piece pc, Square s, Bitboard occupied)
 
 	switch (type_of(pc))
 	{
-	case CANNON: return attacks_bb<CANNON>(s, occupied);
+	case CANON: return attacks_bb<CANON>(s, occupied);
 	case CHARIOT: return attacks_bb<CHARIOT>(s, occupied);
 	case HORSE: return attacks_bb<HORSE>(s, occupied);
 	case ELEPHANT: return attacks_bb<ELEPHANT>(s, occupied);

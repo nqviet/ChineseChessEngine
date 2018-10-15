@@ -259,7 +259,7 @@ namespace
 		while ((s = *pl++) != PT_NONE)
 		{
 			// Find attacked squares, including x-ray attacks for bishops and rooks
-			b = Pt == CANNON ? attacks_bb<CANNON>(s, pos.pieces() /*^ pos.pieces(Us, QUEEN)*/)
+			b = Pt == CANON ? attacks_bb<CANON>(s, pos.pieces() /*^ pos.pieces(Us, QUEEN)*/)
 				: Pt == CHARIOT ? attacks_bb<  CHARIOT>(s, pos.pieces() /*^ pos.pieces(Us, ROOK, QUEEN)*/)
 				: pos.attacks_from<Pt>(s);
 
@@ -280,17 +280,17 @@ namespace
 
 			mobility[Us] += MobilityBonus[Pt][mob];
 
-			if (Pt == CANNON || Pt == HORSE)
+			if (Pt == CANON || Pt == HORSE)
 			{
 				// Bonus for outpost squares
 				bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
 				if (bb & s)
-					score += Outpost[Pt == CANNON][!!(ei.attackedBy[Us][SOLDIER] & s)];
+					score += Outpost[Pt == CANON][!!(ei.attackedBy[Us][SOLDIER] & s)];
 				else
 				{
 					bb &= b & ~pos.pieces(Us);
 					if (bb)
-						score += ReachableOutpost[Pt == CANNON][!!(ei.attackedBy[Us][SOLDIER] & bb)];
+						score += ReachableOutpost[Pt == CANON][!!(ei.attackedBy[Us][SOLDIER] & bb)];
 				}
 
 				// Bonus when behind a pawn
@@ -299,13 +299,13 @@ namespace
 					score += MinorBehindPawn;
 
 				// Penalty for pawns on the same color square as the bishop
-				if (Pt == CANNON)
+				if (Pt == CANON)
 					score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
 
 				// An important Chess960 pattern: A cornered bishop blocked by a friendly
 				// pawn diagonally in front of it is a very serious problem, especially
 				// when that pawn is also blocked.
-				if (Pt == CANNON					
+				if (Pt == CANON					
 					&& (s == relative_square(Us, PT_A1) || s == relative_square(Us, PT_H1)))
 				{
 					Square d = pawn_push(Us) + (file_of(s) == FILE_A ? EAST : WEST);
@@ -419,7 +419,7 @@ namespace
 				| (pos.pieces(Them, SOLDIER) & shift<Up>(pos.pieces(SOLDIER))));
 
 			b1 = pos.attacks_from<CHARIOT  >(ksq);
-			b2 = pos.attacks_from<CANNON>(ksq);
+			b2 = pos.attacks_from<CANON>(ksq);
 
 			// Enemy queen safe checks
 			if ((b1 | b2) & ei.attackedBy[Them][CHARIOT] & safe)
@@ -439,10 +439,10 @@ namespace
 				score -= OtherCheck;
 
 			// Enemy bishops safe and other checks
-			if (b2 & ei.attackedBy[Them][CANNON] & safe)
+			if (b2 & ei.attackedBy[Them][CANON] & safe)
 				kingDanger += BishopCheck, score -= SafeCheck;
 
-			else if (b2 & ei.attackedBy[Them][CANNON] & other)
+			else if (b2 & ei.attackedBy[Them][CANON] & other)
 				score -= OtherCheck;
 
 			// Enemy knights safe and other checks
@@ -455,7 +455,7 @@ namespace
 
 			// Compute the king danger score and subtract it from the evaluation
 			if (kingDanger > 0)
-				score -= make_score(std::min(kingDanger * kingDanger / 4096, 2 * int(CannonValueMg)), 0);
+				score -= make_score(std::min(kingDanger * kingDanger / 4096, 2 * int(CanonValueMg)), 0);
 		}
 
 		// King tropism: firstly, find squares that opponent attacks in our king flank

@@ -17,7 +17,7 @@ namespace
 		{
 			if (Checks)
 			{
-				if ((Pt == HORSE || Pt == CHARIOT || Pt == CANNON)
+				if ((Pt == HORSE || Pt == CHARIOT || Pt == CANON)
 					&& !(PseudoAttacks[Pt][from] & target & pos.check_squares(Pt)))
 					continue;
 
@@ -26,10 +26,10 @@ namespace
 			}
 
 			Bitboard b;
-			if (Pt == CANNON)
+			if (Pt == CANON)
 			{
 				// attack and quiet moves
-				b = pos.attacks_from<CANNON>(from) & target & pos.pieces(~pos.side_to_move());
+				b = pos.attacks_from<CANON>(from) & target & pos.pieces(~pos.side_to_move());
 				b |= pos.attacks_from<CHARIOT>(from) & target & (~pos.pieces());
 			}
 			else if (Pt == SOLDIER)
@@ -58,7 +58,7 @@ namespace
 		moveList = generate_moves<ELEPHANT, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves< ADVISOR, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves<   HORSE, Checks>(pos, moveList, Us, target);
-		moveList = generate_moves<  CANNON, Checks>(pos, moveList, Us, target);
+		moveList = generate_moves<  CANON, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves< CHARIOT, Checks>(pos, moveList, Us, target);
 
 		if (Type != QUIET_CHECKS && Type != EVASIONS)
@@ -115,7 +115,7 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 		PieceType pt = type_of(pos.piece_on(from));
 
 		Bitboard b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
-		if (pt == CANNON)
+		if (pt == CANON)
 		{
 			b |= pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
 		}
@@ -170,14 +170,14 @@ ExtMove* generate<LEGAL>(const Position& pos, ExtMove* moveList)
 {	
 	Bitboard pinned = pos.pinned_pieces(pos.side_to_move());
 	Square ksq = pos.square<GENERAL>(pos.side_to_move());
-	Bitboard kingFacedCannons = pos.attacks_from<CHARIOT>(ksq) & pos.pieces(~pos.side_to_move(), CANNON);	
+	Bitboard canonsFacingToKing = pos.attacks_from<CHARIOT>(ksq) & pos.pieces(~pos.side_to_move(), CANON);	
 	ExtMove* cur = moveList;
 
 	moveList = pos.checkers() ? generate<EVASIONS>(pos, moveList)
 		: generate<NON_EVASIONS>(pos, moveList);
 
 	while (cur != moveList)
-		if ((pinned || from_sq(*cur) == ksq || kingFacedCannons || pos.checkers())
+		if ((pinned || from_sq(*cur) == ksq || canonsFacingToKing || pos.checkers())
 			&& !pos.legal(*cur))
 			*cur = (--moveList)->move;
 		else

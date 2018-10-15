@@ -11,7 +11,7 @@
 /// its previous state when we retract a move. Whenever a move is made on the
 /// board (by calling Position::do_move), a StateInfo object must be passed.
 
-struct StateInfo 
+struct StateInfo
 {
 	// Copied when making a move
 	Key    pawnKey;
@@ -83,22 +83,24 @@ public:
 	// Piece specific
 	bool pawn_passed(Color c, Square s) const;
 
-	// Attacks to/from a given square	
+	// Attacks to/from a given square
 	Bitboard attackers_to(Square s) const;
 	Bitboard attackers_to(Square s, Bitboard occupied) const;
+  Bitboard horses_to(Square s, Bitboard occupied) const;
+  Bitboard horses_to(Square s) const;
 	Bitboard attacks_from(Piece pc, Square s) const;
 	template<PieceType> Bitboard attacks_from(Square s) const;
 	template<PieceType> Bitboard attacks_from(Square s, Color c) const;
 	Bitboard slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const;
-	Bitboard cannon_blockers(Bitboard sliders, Square s, Bitboard& pinners) const;
+	Bitboard canon_blockers(Bitboard sliders, Square s, Bitboard& pinners) const;
 	Bitboard horse_blockers(Bitboard sliders, Square s, Bitboard& pinners) const;
 
 	// Properties of moves
 	bool legal(Move m) const;
 	bool pseudo_legal(const Move m) const;
 	bool gives_check(Move m) const;
-	bool gives_cannon_check(Move m) const;
-	bool receives_cannon_check(Move m) const;
+	bool gives_canon_check(Move m) const;
+	bool receives_canon_check(Move m) const;
 
 	// Doing and undoing moves
 	void do_move(Move m, StateInfo& st, bool givesCheck);
@@ -128,7 +130,7 @@ public:
 private:
 	// Initialization helpers (used while setting up a position)
 	void set_state(StateInfo* si) const;
-	void set_check_info(StateInfo* si) const;	
+	void set_check_info(StateInfo* si) const;
 
 	// Other helpers
 	void put_piece(Piece pc, Square s);
@@ -151,75 +153,75 @@ private:
 
 extern std::ostream& operator<<(std::ostream& os, const Position& pos);
 
-inline Color Position::side_to_move() const 
+inline Color Position::side_to_move() const
 {
 	return sideToMove;
 }
 
-inline bool Position::empty(Square s) const 
+inline bool Position::empty(Square s) const
 {
 	return board[s] == NO_PIECE;
 }
 
-inline Piece Position::piece_on(Square s) const 
+inline Piece Position::piece_on(Square s) const
 {
 	return board[s];
 }
 
-inline Piece Position::moved_piece(Move m) const 
+inline Piece Position::moved_piece(Move m) const
 {
 	return board[from_sq(m)];
 }
 
-inline Bitboard Position::pieces() const 
+inline Bitboard Position::pieces() const
 {
 	return byTypeBB[ALL_PIECES];
 }
 
-inline Bitboard Position::pieces(PieceType pt) const 
+inline Bitboard Position::pieces(PieceType pt) const
 {
 	return byTypeBB[pt];
 }
 
-inline Bitboard Position::pieces(PieceType pt1, PieceType pt2) const 
+inline Bitboard Position::pieces(PieceType pt1, PieceType pt2) const
 {
 	return byTypeBB[pt1] | byTypeBB[pt2];
 }
 
-inline Bitboard Position::pieces(Color c) const 
+inline Bitboard Position::pieces(Color c) const
 {
 	return byColorBB[c];
 }
 
-inline Bitboard Position::pieces(Color c, PieceType pt) const 
+inline Bitboard Position::pieces(Color c, PieceType pt) const
 {
 	return byColorBB[c] & byTypeBB[pt];
 }
 
-inline Bitboard Position::pieces(Color c, PieceType pt1, PieceType pt2) const 
+inline Bitboard Position::pieces(Color c, PieceType pt1, PieceType pt2) const
 {
 	return byColorBB[c] & (byTypeBB[pt1] | byTypeBB[pt2]);
 }
 
-template<PieceType Pt> inline int Position::count(Color c) const 
+template<PieceType Pt> inline int Position::count(Color c) const
 {
 	return pieceCount[make_piece(c, Pt)];
 }
 
-template<PieceType Pt> inline const Square* Position::squares(Color c) const 
+template<PieceType Pt> inline const Square* Position::squares(Color c) const
 {
 	return pieceList[make_piece(c, Pt)];
 }
 
-template<PieceType Pt> inline Square Position::square(Color c) const 
-{	
+template<PieceType Pt> inline Square Position::square(Color c) const
+{
 	return pieceList[make_piece(c, Pt)][0];
 }
 
 template<PieceType Pt>
-inline Bitboard Position::attacks_from(Square s) const 
+inline Bitboard Position::attacks_from(Square s) const
 {
-	return  Pt == CANNON || Pt == CHARIOT || Pt == HORSE || Pt == ELEPHANT ? attacks_bb<Pt>(s, byTypeBB[ALL_PIECES])
+	return  Pt == CANON || Pt == CHARIOT || Pt == HORSE || Pt == ELEPHANT ? attacks_bb<Pt>(s, byTypeBB[ALL_PIECES])
 		: StepAttacksBB[Pt][s];
 }
 
@@ -229,27 +231,32 @@ inline Bitboard Position::attacks_from<SOLDIER>(Square s, Color c) const
 	return StepAttacksBB[make_piece(c, SOLDIER)][s];
 }
 
-inline Bitboard Position::attacks_from(Piece pc, Square s) const 
+inline Bitboard Position::attacks_from(Piece pc, Square s) const
 {
 	return attacks_bb(pc, s, byTypeBB[ALL_PIECES]);
 }
 
-inline Bitboard Position::attackers_to(Square s) const 
+inline Bitboard Position::attackers_to(Square s) const
 {
 	return attackers_to(s, byTypeBB[ALL_PIECES]);
 }
 
-inline Bitboard Position::checkers() const 
+inline Bitboard Position::horses_to(Square s) const
+{
+  return horses_to(s, byTypeBB[ALL_PIECES]);
+}
+
+inline Bitboard Position::checkers() const
 {
 	return st->checkersBB;
 }
 
-inline Bitboard Position::discovered_check_candidates() const 
+inline Bitboard Position::discovered_check_candidates() const
 {
 	return st->blockersForKing[~sideToMove] & pieces(sideToMove);
 }
 
-inline Bitboard Position::pinned_pieces(Color c) const 
+inline Bitboard Position::pinned_pieces(Color c) const
 {
 	return st->blockersForKing[c] & pieces(c);
 }
@@ -259,73 +266,73 @@ inline Bitboard Position::fixedPinned_pieces(Color c) const
 	return st->fixedPinnersForKing[c];
 }
 
-inline Bitboard Position::check_squares(PieceType pt) const 
+inline Bitboard Position::check_squares(PieceType pt) const
 {
 	return st->checkSquares[pt];
 }
 
-inline bool Position::pawn_passed(Color c, Square s) const 
+inline bool Position::pawn_passed(Color c, Square s) const
 {
 	return !(pieces(~c, SOLDIER) & passed_pawn_mask(c, s));
 }
 
-inline bool Position::advanced_pawn_push(Move m) const 
+inline bool Position::advanced_pawn_push(Move m) const
 {
 	return   type_of(moved_piece(m)) == SOLDIER
 		&& relative_rank(sideToMove, from_sq(m)) > RANK_4;
 }
 
-inline Key Position::key() const 
+inline Key Position::key() const
 {
 	return st->key;
 }
 
-inline Key Position::pawn_key() const 
+inline Key Position::pawn_key() const
 {
 	return st->pawnKey;
 }
 
-inline Key Position::material_key() const 
+inline Key Position::material_key() const
 {
 	return st->materialKey;
 }
 
-inline Score Position::psq_score() const 
+inline Score Position::psq_score() const
 {
 	return st->psq;
 }
 
-inline Value Position::non_pawn_material(Color c) const 
+inline Value Position::non_pawn_material(Color c) const
 {
 	return st->nonPawnMaterial[c];
 }
 
-inline int Position::game_ply() const 
+inline int Position::game_ply() const
 {
 	return gamePly;
 }
 
-inline uint64_t Position::nodes_searched() const 
+inline uint64_t Position::nodes_searched() const
 {
 	return nodes;
 }
 
-inline bool Position::capture(Move m) const 
-{		
+inline bool Position::capture(Move m) const
+{
 	return !empty(to_sq(m));
 }
 
-inline Piece Position::captured_piece() const 
+inline Piece Position::captured_piece() const
 {
 	return st->capturedPiece;
 }
 
-inline Thread* Position::this_thread() const 
+inline Thread* Position::this_thread() const
 {
 	return thisThread;
 }
 
-inline void Position::put_piece(Piece pc, Square s) 
+inline void Position::put_piece(Piece pc, Square s)
 {
 	board[s] = pc;
 	byTypeBB[ALL_PIECES] |= s;
@@ -353,7 +360,7 @@ inline void Position::remove_piece(Piece pc, Square s) {
 	pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
 }
 
-inline void Position::move_piece(Piece pc, Square from, Square to) 
+inline void Position::move_piece(Piece pc, Square from, Square to)
 {
 
 	// index[from] is not updated and becomes stale. This works as long as index[]

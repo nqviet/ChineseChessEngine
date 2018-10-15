@@ -132,7 +132,7 @@ Value Endgame<KXK>::operator()(const Position& pos) const
 		+ PushToEdges[loserKSq]
 		+ PushClose[distance(winnerKSq, loserKSq)];
 
-	if (pos.count<CANNON>(strongSide)
+	if (pos.count<CANON>(strongSide)
 		|| pos.count<CHARIOT>(strongSide)
 		|| (pos.count<ELEPHANT>(strongSide) && pos.count<HORSE>(strongSide))
 		|| (pos.count<ELEPHANT>(strongSide) > 1 && pos.squares<ELEPHANT>(strongSide)[1]))
@@ -287,13 +287,13 @@ Value Endgame<KQKR>::operator()(const Position& pos) const
 {
 
 	assert(verify_material(pos, strongSide, ChariotValueMg, 0));
-	assert(verify_material(pos, weakSide, CannonValueMg, 0));
+	assert(verify_material(pos, weakSide, CanonValueMg, 0));
 
 	Square winnerKSq = pos.square<GENERAL>(strongSide);
 	Square loserKSq = pos.square<GENERAL>(weakSide);
 
 	Value result = ChariotValueEg
-		- CannonValueEg
+		- CanonValueEg
 		+ PushToEdges[loserKSq]
 		+ PushClose[distance(winnerKSq, loserKSq)];
 

@@ -9,12 +9,12 @@ namespace
 	const int QuadraticOurs[][PIECE_TYPE_NB] = 
 	{	
 		//            OUR PIECES
-		// pair soldier horse elephant cannon chariot advisor
+		// pair soldier horse elephant canon chariot advisor
 		{1667												}, // pair
 		{  40,		2										}, // Soldier
 		{  32,	  255,	  -3								}, // Horse			OUR PIECES
 		{   0,  104,   4,    0								}, // Elephant
-		{ -26,   -2,  47,   105,  -149						}, // Cannon
+		{ -26,   -2,  47,   105,  -149						}, // Canon
 		{ -185,   24, 122,   137,  -134,   0				}, // Chariot
 		{													}, // Advisor		
 	};
@@ -22,12 +22,12 @@ namespace
 	const int QuadraticTheirs[][PIECE_TYPE_NB] =
 	{
 		//           THEIR PIECES
-		// pair soldier horse elephant cannon chariot advisor
+		// pair soldier horse elephant canon chariot advisor
 		{0													}, // pair
 		{ 36,    0											}, // Soldier
 		{ 9,   63,   0										}, // Horse      OUR PIECES
 		{ 59,   65,  42,     0								}, // Elephant
-		{ 46,   39,  24,   -24,    0						}, // Cannon
+		{ 46,   39,  24,   -24,    0						}, // Canon
 		{ 101,  100, -37,   141,  268,    0					},  // Chariot
 		{													}, // Advisor	
 	};
@@ -60,7 +60,7 @@ namespace
 		return  !pos.count<SOLDIER>(us)
 			&& pos.non_pawn_material(us) == ChariotValueMg
 			&& pos.count<CHARIOT>(us) == 1
-			&& pos.count<CANNON>(~us) == 1
+			&& pos.count<CANON>(~us) == 1
 			&& pos.count<SOLDIER>(~us) >= 1;
 	}
 
@@ -192,9 +192,9 @@ Entry* probe(const Position& pos)
 	// in defining bishop pair bonuses.
 	const int PieceCount[COLOR_NB][PIECE_TYPE_NB] = {
 		{ pos.count<ELEPHANT>(WHITE) > 1, pos.count<SOLDIER>(WHITE), pos.count<HORSE>(WHITE),
-		pos.count<ELEPHANT>(WHITE)    , pos.count<CANNON>(WHITE), pos.count<CHARIOT >(WHITE) },
+		pos.count<ELEPHANT>(WHITE)    , pos.count<CANON>(WHITE), pos.count<CHARIOT >(WHITE) },
 		{ pos.count<ELEPHANT>(BLACK) > 1, pos.count<SOLDIER>(BLACK), pos.count<HORSE>(BLACK),
-		pos.count<ELEPHANT>(BLACK)    , pos.count<CANNON>(BLACK), pos.count<CHARIOT >(BLACK) } };
+		pos.count<ELEPHANT>(BLACK)    , pos.count<CANON>(BLACK), pos.count<CHARIOT >(BLACK) } };
 
 	e->value = int16_t((imbalance<WHITE>(PieceCount) - imbalance<BLACK>(PieceCount)) / 16);
 	return e;

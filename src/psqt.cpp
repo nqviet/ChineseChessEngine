@@ -3,8 +3,8 @@
 #include "types.h"
 
 Value PieceValue[PHASE_NB][PIECE_NB] = {
-	{ VALUE_ZERO, SoldierValueMg, HorseValueMg, ElephantValueMg, CannonValueMg, ChariotValueMg },
-	{ VALUE_ZERO, SoldierValueEg, HorseValueEg, ElephantValueEg, CannonValueEg, ChariotValueEg }
+	{ VALUE_ZERO, SoldierValueMg, HorseValueMg, ElephantValueMg, CanonValueMg, ChariotValueMg },
+	{ VALUE_ZERO, SoldierValueEg, HorseValueEg, ElephantValueEg, CanonValueEg, ChariotValueEg }
 };
 
 namespace PSQT
@@ -46,7 +46,7 @@ const Score Bonus[][RANK_NB][int(FILE_NB) / 2 + 1] =
 	},
 	{ // Elephant
 	},
-	{ // Cannon
+	{ // Canon
 		{ S(-54,-68), S(-23,-40), S(-35,-46), S(-44,-28),	S(0, 0) },
 		{ S(-30,-43), S(10,-17),  S(2,-23),   S(-9, -5),	S(0, 0) },
 		{ S(-19,-32), S(17, -9),  S(11,-13),  S(1,  8),		S(0, 0) },

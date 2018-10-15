@@ -11,8 +11,8 @@ int SquareDistance[SQUARE_NB][SQUARE_NB];
 Bitboard  ChariotMasks[SQUARE_NB];
 Bitboard* ChariotAttacks[SQUARE_NB];
 
-Bitboard  CannonMasks[SQUARE_NB];
-Bitboard* CannonAttacks[SQUARE_NB];
+Bitboard  CanonMasks[SQUARE_NB];
+Bitboard* CanonAttacks[SQUARE_NB];
 
 Bitboard  HorseMasks[SQUARE_NB];
 Bitboard* HorseAttacks[SQUARE_NB];
@@ -37,21 +37,12 @@ Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 namespace
 {
 	Bitboard ChariotTable[0x108000];	// To store chariot attacks
-	Bitboard CannonTable[0xB40000];		// To store cannon attacks
+	Bitboard CanonTable[0x108000/*0xB40000*/];		// To store canon attacks
 	Bitboard HorseTable[0x10F00];		// To store horse attacks
 	Bitboard ElephantTable[0xB24];		// To store elephant attacks
 
 	template <PieceType Pt>
 	void init_magics(Bitboard table[], Bitboard* attacks[],	Bitboard masks[], Square deltas[], int deltasSize);
-
-	template <PieceType Pt>
-	void save_magics(Bitboard table[], size_t tblSize, Bitboard masks[], size_t mskSize);
-
-	template <PieceType Pt>
-	void load_magics(Bitboard table[], Bitboard* attacks[], Bitboard masks[]);
-
-	template <PieceType Pt>
-	bool stored_magics();
 }
 
 const std::string Bitboards::pretty(Bitboard b)
@@ -136,7 +127,7 @@ void Bitboards::init()
 				}
 
 	Square ChariotDeltas[]	= { NORTH,  EAST,  SOUTH,  WEST };
-	Square CannonDeltas[]	= { NORTH,  EAST,  SOUTH,  WEST };
+	Square CanonDeltas[]	= { NORTH,  EAST,  SOUTH,  WEST };
 	Square HorseDeltas[]	= {	NORTH + NORTH + EAST, NORTH + NORTH + WEST,
 								SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,
 								EAST + EAST + NORTH, EAST + EAST + SOUTH,
@@ -165,13 +156,7 @@ void Bitboards::init()
 	ENDT
 
 	STARTT
-	if (stored_magics<CANNON>())
-		load_magics<CANNON>(CannonTable, CannonAttacks, CannonMasks);
-	else
-	{
-		init_magics<CANNON>(CannonTable, CannonAttacks, CannonMasks, CannonDeltas, 4);
-		save_magics<CANNON>(CannonTable, sizeof(CannonTable)/sizeof(Bitboard), CannonMasks, sizeof(CannonMasks) / sizeof(Bitboard));
-	}
+	init_magics<CANON>(CanonTable, CanonAttacks, CanonMasks, CanonDeltas, 4);
 	ENDT
 
 	STARTT
@@ -195,7 +180,7 @@ void Bitboards::init()
 		surroundingBB |= shift<SOUTH>(SquareBB[s1]);
 		surroundingBB |= shift<WEST >(SquareBB[s1]);
 
-		PseudoAttacks[CANNON][s1] = PseudoAttacks[CHARIOT][s1] & ~surroundingBB;
+		PseudoAttacks[CANON][s1] = PseudoAttacks[CHARIOT][s1] & ~surroundingBB;
 
 		for (Square s2 = PT_A1; s2 <= PT_I10; ++s2)
 		{
@@ -219,7 +204,7 @@ namespace
 				is_ok(s) && distance(s, s - deltas[i]) == 1;
 				s += deltas[i])
 			{
-				if (pt == CANNON)
+				if (pt == CANON)
 				{
 					if (occupied)
 					{
@@ -325,14 +310,14 @@ namespace
 		return attack;
 	}
 
-	/// init_magics() computes all chariot and cannon attacks at startup.
+	/// init_magics() computes all chariot and canon attacks at startup.
 
 	template <PieceType Pt>
 	void init_magics(Bitboard table[], Bitboard* attacks[], Bitboard masks[], Square deltas[], int deltasSize)
 	{
-		Bitboard edges, b;
+		Bitboard edges, b, ring;
 		int size;
-		auto attack = (Pt == CANNON || Pt == CHARIOT) ? sliding_attack : step_attack;
+		auto attack = (Pt == CANON || Pt == CHARIOT) ? sliding_attack : step_attack;
 
 		// attacks[s] is a pointer to the beginning of the attacks table for square 's'
 		attacks[PT_A1] = table;
@@ -347,8 +332,8 @@ namespace
 			// all the attacks for each possible subset of the mask and so is 2 power
 			// the number of 1s of the mask. Hence we deduce the size of the shift to
 			// apply to the 64 or 32 bits word to get the index.
-			if (Pt == CANNON)
-				masks[s] = attack(deltas, deltasSize, s, 0, NO_PIECE_TYPE);
+			if (Pt == CANON)
+				masks[s] = attack(deltas, deltasSize, s, 0, NO_PIECE_TYPE) & ~edges;
 			else
 				masks[s] = attack(deltas, deltasSize, s, 0, NO_PIECE_TYPE) & ~edges;
 
@@ -365,116 +350,7 @@ namespace
 
 			// Set the offset for the table of the next point.
 			if (s < PT_I10)
-				attacks[s + 1] = attacks[s] + size;
-		}
-	}
-
-	template <PieceType Pt>
-	void save_magics(Bitboard table[], size_t tblSize, Bitboard masks[], size_t mskSize)
-	{
-		std::fstream osf;
-		std::string tblFileName, mskFileName;
-		pair64 bb;
-
-		switch(Pt)
-		{
-		case CHARIOT:	tblFileName = "tblR"; mskFileName = "mskR"; break;
-		case HORSE:		tblFileName = "tblH"; mskFileName = "mskH"; break;
-		case CANNON:	tblFileName = "tblC"; mskFileName = "mskC"; break;
-		default:		assert(0);
-		}
-
-		osf.open(tblFileName, std::fstream::out | std::fstream::binary);
-		osf.write((const char*)(&tblSize), sizeof(size_t));
-		for (size_t i = 0; i < tblSize; ++i)
-		{
-			bb = table[i];
-			osf.write((const char*)(bb.v), 16);
-		}
-		osf.close();
-
-		osf.open(mskFileName, std::fstream::out | std::fstream::binary);
-		osf.write((const char*)(&mskSize), sizeof(size_t));
-		for (size_t i = 0; i < mskSize; ++i)
-		{
-			bb = masks[i];
-			osf.write((const char*)(bb.v), 16);
-		}
-		osf.close();
-	}
-
-	template <PieceType Pt>
-	void load_magics(Bitboard table[], Bitboard* attacks[], Bitboard masks[])
-	{
-		std::fstream isf;
-		std::string tblFileName, mskFileName;
-		size_t tblSize, mskSize;
-		pair64 bb;
-
-		switch (Pt)
-		{
-		case CHARIOT:	tblFileName = "tblR"; mskFileName = "mskR"; break;
-		case HORSE:		tblFileName = "tblH"; mskFileName = "mskH"; break;
-		case CANNON:	tblFileName = "tblC"; mskFileName = "mskC"; break;
-		default:		assert(0);
-		}
-
-		isf.open(tblFileName, std::fstream::in | std::fstream::binary);
-		isf.read((char*)(&tblSize), sizeof(size_t));
-		for (size_t i = 0; i < tblSize; ++i)
-		{
-			isf.read((char*)(bb.v), 16);
-			table[i] = bb;
-		}
-		isf.close();
-
-		isf.open(mskFileName, std::fstream::in | std::fstream::binary);
-		isf.read((char*)(&mskSize), sizeof(size_t));
-		for (size_t i = 0; i < mskSize; ++i)
-		{
-			isf.read((char*)(bb.v), 16);
-			masks[i] = bb;
-		}
-		isf.close();
-
-		// initial the attack table
-		Bitboard b;
-		int size = 0;
-		attacks[PT_A1] = table;
-		for (Square s = PT_A1; s <= PT_I10; ++s)
-		{
-			b = size = 0;
-			do
-			{
-				size++;
-				b = (b - masks[s]) & masks[s];
-			} while (b);
-
-			// Set the offset for the table of the next point.
-			if (s < PT_I10)
-				attacks[s + 1] = attacks[s] + size;
-		}
-	}
-
-	template <PieceType Pt>
-	bool stored_magics()
-	{
-		std::fstream isf;
-		std::string tblFileName, mskFileName;
-		bool stored = false;
-
-		switch (Pt)
-		{
-		case CHARIOT:	tblFileName = "tblR"; mskFileName = "mskR"; break;
-		case HORSE:		tblFileName = "tblH"; mskFileName = "mskH"; break;
-		case CANNON:	tblFileName = "tblC"; mskFileName = "mskC"; break;
-		default:		assert(0);
-		}
-
-		isf.open(tblFileName);
-		stored = isf.good();
-		isf.close();
-
-		return stored;
+				attacks[s + 1] = attacks[s] + size;      
+		}    
 	}
 }
