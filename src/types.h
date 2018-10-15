@@ -21,7 +21,7 @@
 { \
     __m128i v1, v2; \
  \
-    if ((n) >= 64) \
+    if (n >> 6) \
     { \
         v1 = _mm_slli_si128(v, 8); \
         v1 = _mm_slli_epi64(v1, (n) - 64); \
@@ -40,7 +40,7 @@
 { \
     __m128i v1, v2; \
  \
-    if ((n) >= 64) \
+    if (n >> 6) \
     { \
         v1 = _mm_srli_si128(v, 8); \
         v1 = _mm_srli_epi64(v1, (n) - 64); \
@@ -60,7 +60,7 @@ inline int pext_si128(__m128i src, __m128i mask)
 	int shift;
 	uint64_t low = pext(src.m128i_u64[0], mask.m128i_u64[0]);
 	uint64_t high = pext(src.m128i_u64[1], mask.m128i_u64[1]);
-	
+
 	shift = (int)_mm_popcnt_u64(mask.m128i_u64[0]);
 
 	return ((high << shift) | low) & 0xFFFFFFFF;
@@ -69,7 +69,7 @@ inline int pext_si128(__m128i src, __m128i mask)
 struct sPair64
 {
 	sPair64(uint64_t first, uint64_t second)
-	{		
+	{
 		this->v[0] = first;
 		this->v[1] = second;
 	}
@@ -77,7 +77,7 @@ struct sPair64
 	sPair64(uint64_t first)
 	{
 		this->v[0] = first;
-		
+
 		if (first & 0x8000000000000000ULL)
 			this->v[1] = 0xFFFFFFFFFFFFFFFFULL;
 		else
@@ -123,13 +123,13 @@ namespace
 	};
 }
 
-enum Move : int 
+enum Move : int
 {
 	MOVE_NONE,
 	MOVE_NULL = 91
 };
 
-enum MoveType 
+enum MoveType
 {
 	NORMAL,
 	RESERVE0	= 1 << 14,
@@ -137,12 +137,12 @@ enum MoveType
 	RESERVE2	= 3 << 14
 };
 
-enum Color 
+enum Color
 {
 	WHITE, BLACK, NO_COLOR, COLOR_NB = 2
 };
 
-enum ScaleFactor 
+enum ScaleFactor
 {
 	SCALE_FACTOR_DRAW = 0,
 	SCALE_FACTOR_ONEPAWN = 48,
@@ -151,14 +151,14 @@ enum ScaleFactor
 	SCALE_FACTOR_NONE = 255
 };
 
-enum Phase 
+enum Phase
 {
 	PHASE_ENDGAME,
 	PHASE_MIDGAME = 128,
 	MG = 0, EG = 1, PHASE_NB = 2
 };
 
-enum Bound 
+enum Bound
 {
 	BOUND_NONE,
 	BOUND_UPPER,
@@ -166,7 +166,7 @@ enum Bound
 	BOUND_EXACT = BOUND_UPPER | BOUND_LOWER
 };
 
-enum Value : int 
+enum Value : int
 {
 	VALUE_ZERO = 0,
 	VALUE_DRAW = 0,
@@ -188,14 +188,14 @@ enum Value : int
 	MidgameLimit = 15258, EndgameLimit = 3915
 };
 
-enum PieceType 
+enum PieceType
 {
 	NO_PIECE_TYPE, SOLDIER, HORSE, ELEPHANT, CANNON, CHARIOT, ADVISOR, GENERAL,
 	ALL_PIECES = 0,
 	PIECE_TYPE_NB = 9
 };
 
-enum Piece 
+enum Piece
 {
 	NO_PIECE,
 	W_SOLDIER = 1, W_HORSE, W_ELEPHANT, W_CANNON, W_CHARIOT, W_ADVISOR, W_GENERAL,
@@ -203,14 +203,14 @@ enum Piece
 	PIECE_NB = 16
 };
 
-const Piece Pieces[] = 
+const Piece Pieces[] =
 {
 	W_SOLDIER, W_HORSE, W_ELEPHANT, W_CANNON, W_CHARIOT, W_ADVISOR, W_GENERAL,
 	B_SOLDIER, B_HORSE, B_ELEPHANT, B_CANNON, B_CHARIOT, B_ADVISOR, B_GENERAL
 };
 extern Value PieceValue[PHASE_NB][PIECE_NB];
 
-enum Depth 
+enum Depth
 {
 
 	ONE_PLY = 1,
@@ -246,20 +246,20 @@ enum Square
 	NORTH = 9,
 	EAST = 1,
 	SOUTH = -9,
-	WEST = -1,	
+	WEST = -1,
 
 	NORTH_EAST = /*NORTH*/9 + /*EAST*/1,
 	SOUTH_EAST = /*SOUTH*/-9 + /*EAST*/1,
 	SOUTH_WEST = /*SOUTH*/-9 + /*WEST*/-1,
-	NORTH_WEST = /*NORTH*/9 + /*WEST*/-1,	
+	NORTH_WEST = /*NORTH*/9 + /*WEST*/-1,
 };
 
-enum File : int 
+enum File : int
 {
 	FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_I, FILE_NB
 };
 
-enum Rank : int 
+enum Rank : int
 {
 	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9, RANK_10, RANK_NB
 };
@@ -270,7 +270,7 @@ enum Rank : int
 /// care to avoid left-shifting a signed int to avoid undefined behavior.
 enum Score : int { SCORE_ZERO };
 
-inline Score make_score(int mg, int eg) 
+inline Score make_score(int mg, int eg)
 {
 	return Score((int)((unsigned int)eg << 16) + mg);
 }
@@ -278,14 +278,14 @@ inline Score make_score(int mg, int eg)
 /// Extracting the signed lower and upper 16 bits is not so trivial because
 /// according to the standard a simple cast to short is implementation defined
 /// and so is a right shift of a signed integer.
-inline Value eg_value(Score s) 
+inline Value eg_value(Score s)
 {
 
 	union { uint16_t u; int16_t s; } eg = { uint16_t(unsigned(s + 0x8000) >> 16) };
 	return Value(eg.s);
 }
 
-inline Value mg_value(Score s) 
+inline Value mg_value(Score s)
 {
 
 	union { uint16_t u; int16_t s; } mg = { uint16_t(unsigned(s)) };
@@ -306,7 +306,7 @@ inline T operator&(T d1, T d2) { return T(int(d1) & int(d2)); }	\
 inline T operator|(T d1, T d2) { return T(int(d1) | int(d2)); }	\
 inline T& operator+=(T& d1, T d2) { return d1 = d1 + d2; }      \
 inline T& operator-=(T& d1, T d2) { return d1 = d1 - d2; }      \
-inline T& operator*=(T& d, int i) { return d = T(int(d) * i); } 
+inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
 
 #define ENABLE_FULL_OPERATORS_ON(T)                             \
 ENABLE_BASE_OPERATORS_ON(T)                                     \
@@ -330,7 +330,7 @@ ENABLE_BASE_OPERATORS_ON(Score)
 #undef ENABLE_FULL_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON
 
-inline Color operator~(Color c) 
+inline Color operator~(Color c)
 {
 	return Color(c ^ BLACK); // Toggle color
 }
@@ -340,92 +340,92 @@ inline Square operator~(Square s)
 	return Square(int(RANK_NB - s / FILE_NB - 1) * FILE_NB + (s % FILE_NB)); // vertical flip
 }
 
-inline Piece operator~(Piece pc) 
+inline Piece operator~(Piece pc)
 {
 	return Piece(pc ^ 8); // Swap color of piece B_KNIGHT -> W_KNIGHT
 }
 
-inline Value mate_in(int ply) 
+inline Value mate_in(int ply)
 {
 	return VALUE_MATE - Value(ply);
 }
 
-inline Value mated_in(int ply) 
+inline Value mated_in(int ply)
 {
 	return -VALUE_MATE + ply;
 }
 
-inline Square make_square(File f, Rank r) 
+inline Square make_square(File f, Rank r)
 {
 	return Square(((r << 3) + r) + f);
 }
 
-inline Piece make_piece(Color c, PieceType pt) 
+inline Piece make_piece(Color c, PieceType pt)
 {
 	return Piece((c << 3 ) + pt);
 }
 
-inline PieceType type_of(Piece pc) 
+inline PieceType type_of(Piece pc)
 {
 	return PieceType(pc & 7);
 }
 
-inline Color color_of(Piece pc) 
-{	
+inline Color color_of(Piece pc)
+{
 	return Color(pc >> 3);
 }
 
-inline bool is_ok(Square s) 
+inline bool is_ok(Square s)
 {
 	return s >= PT_A1 && s <= PT_I10;
 }
 
-inline File file_of(Square s) 
+inline File file_of(Square s)
 {
 	return File(s % int(FILE_NB));
 }
 
-inline Rank rank_of(Square s) 
+inline Rank rank_of(Square s)
 {
 	return Rank(s / int(FILE_NB));
 }
 
-inline Square relative_square(Color c, Square s) 
+inline Square relative_square(Color c, Square s)
 {
 	return Square((1 - c) * s + c * int((FILE_NB - s / FILE_NB) * FILE_NB + (s % FILE_NB)));
 }
 
-inline Rank relative_rank(Color c, Rank r) 
+inline Rank relative_rank(Color c, Rank r)
 {
 	return Rank((r ^ (c * 15)) + c * -6);
 }
 
-inline Rank relative_rank(Color c, Square s) 
+inline Rank relative_rank(Color c, Square s)
 {
 	return relative_rank(c, rank_of(s));
 }
 
-inline Square pawn_push(Color c) 
+inline Square pawn_push(Color c)
 {
 	return c == WHITE ? NORTH : SOUTH;
 }
 
-inline Square from_sq(Move m) 
+inline Square from_sq(Move m)
 {
 	return Square((m >> 7) & 0x7F);
 }
 
-inline Square to_sq(Move m) 
+inline Square to_sq(Move m)
 {
 	return Square(m & 0x7F);
 }
 
-inline MoveType type_of(Move m) 
+inline MoveType type_of(Move m)
 {
 	return MoveType(0);
 }
 
-inline Move make_move(Square from, Square to) 
+inline Move make_move(Square from, Square to)
 {
 	return Move((from << 7) + to);
 }
@@ -436,7 +436,7 @@ inline Move make(Square from, Square to, PieceType pt = HORSE)
 	return Move(T + ((pt - HORSE) << 14) + (from << 7) + to);
 }
 
-inline bool is_ok(Move m) 
+inline bool is_ok(Move m)
 {
 	return from_sq(m) != to_sq(m); // Catch MOVE_NULL and MOVE_NONE
 }
@@ -444,7 +444,7 @@ inline bool is_ok(Move m)
 inline const std::string sqToStr(Move m)
 {
 	std::string s;
-	
+
 	s.append(SquareToChar[from_sq(m)]);
 	s.append("-");
 	s.append(SquareToChar[to_sq(m)]);

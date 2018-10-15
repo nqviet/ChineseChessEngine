@@ -607,14 +607,14 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck)
 	// Calculate checkers bitboard (if move gives check)
 	st->checkersBB = givesCheck ? attackers_to(square<GENERAL>(them)) & pieces(us) : 0;
 
-#ifdef _DEBUG
-	if (square<GENERAL>(them) == PT_NONE)
-	{
-		std::cout << "ERROR" << std::endl;
-		std::cout << *this << std::endl;
-		assert(false);
-	}
-#endif
+//#ifdef _DEBUG
+//	if (square<GENERAL>(them) == PT_NONE)
+//	{
+//		std::cout << "ERROR" << std::endl;
+//		std::cout << *this << std::endl;
+//		assert(false);
+//	}
+//#endif
 
 	sideToMove = ~sideToMove;
 

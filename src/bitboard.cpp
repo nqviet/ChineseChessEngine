@@ -61,10 +61,10 @@ const std::string Bitboards::pretty(Bitboard b)
 	for (Rank r = RANK_10; r >= RANK_1; --r)
 	{
 		for (File f = FILE_A; f <= FILE_I; ++f)
-			s += b & make_square(f, r) 
-					?	f != FILE_I ? "X---" : "X" 
+			s += b & make_square(f, r)
+					?	f != FILE_I ? "X---" : "X"
 						:	f != FILE_I ? "----" : "-";
-		if (r == RANK_6)					
+		if (r == RANK_6)
 			s += "\n|||||||||||||||||||||||||||||||||\n";
 		else if (r == RANK_10 || r == RANK_3)
 			s += "\n|   |   |   | \\ | / |   |   |   |\n";
@@ -72,7 +72,7 @@ const std::string Bitboards::pretty(Bitboard b)
 			s += "\n|   |   |   | / | \\ |   |   |   |\n";
 		else if (r != RANK_1)
 			s += "\n|   |   |   |   |   |   |   |   |\n";
-		
+
 	}
 
 	return s;
@@ -83,8 +83,8 @@ const std::string Bitboards::pretty(Bitboard b)
 
 void Bitboards::init()
 {
-	for (Square s = PT_A1; s <= PT_I10; ++s)	
-		SquareBB[s] = Bitboard(1ULL) << s;			
+	for (Square s = PT_A1; s <= PT_I10; ++s)
+		SquareBB[s] = Bitboard(1ULL) << s;
 
 	for (File f = FILE_A; f <= FILE_I; ++f)
 		FileBB[f] = f > FILE_A ? FileBB[f - 1] << 1 : FileABB;
@@ -125,11 +125,11 @@ void Bitboards::init()
 
 					if (is_ok(to) && distance(s, to) < 3)
 					{
-						if (pt == SOLDIER && relative_rank(c, s) <= RANK_5 && file_of(s) != file_of(to)) 
-							continue;						
+						if (pt == SOLDIER && relative_rank(c, s) <= RANK_5 && file_of(s) != file_of(to))
+							continue;
 						else if ((pt == ADVISOR || pt == GENERAL) &&
-							(file_of(to) == FILE_C || file_of(to) == FILE_G || relative_rank(c, to) == RANK_4)) 
-							continue;						
+							(file_of(to) == FILE_C || file_of(to) == FILE_G || relative_rank(c, to) == RANK_4))
+							continue;
 
 						StepAttacksBB[make_piece(c, pt)][s] |= to;
 					}
@@ -137,8 +137,8 @@ void Bitboards::init()
 
 	Square ChariotDeltas[]	= { NORTH,  EAST,  SOUTH,  WEST };
 	Square CannonDeltas[]	= { NORTH,  EAST,  SOUTH,  WEST };
-	Square HorseDeltas[]	= {	NORTH + NORTH + EAST, NORTH + NORTH + WEST,								
-								SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,								
+	Square HorseDeltas[]	= {	NORTH + NORTH + EAST, NORTH + NORTH + WEST,
+								SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,
 								EAST + EAST + NORTH, EAST + EAST + SOUTH,
 								WEST + WEST + NORTH, WEST + WEST + SOUTH,
 								NORTH,  EAST,  SOUTH,  WEST };
@@ -161,8 +161,8 @@ void Bitboards::init()
 #endif
 
 	STARTT
-	init_magics<CHARIOT>(ChariotTable, ChariotAttacks, ChariotMasks, ChariotDeltas, 4);	
-	ENDT	
+	init_magics<CHARIOT>(ChariotTable, ChariotAttacks, ChariotMasks, ChariotDeltas, 4);
+	ENDT
 
 	STARTT
 	if (stored_magics<CANNON>())
@@ -196,7 +196,7 @@ void Bitboards::init()
 		surroundingBB |= shift<WEST >(SquareBB[s1]);
 
 		PseudoAttacks[CANNON][s1] = PseudoAttacks[CHARIOT][s1] & ~surroundingBB;
-		
+
 		for (Square s2 = PT_A1; s2 <= PT_I10; ++s2)
 		{
 			if (!(PseudoAttacks[CHARIOT][s1] & s2))
@@ -220,15 +220,15 @@ namespace
 				s += deltas[i])
 			{
 				if (pt == CANNON)
-				{					
+				{
 					if (occupied)
-					{		
-						Bitboard bb;						
+					{
+						Bitboard bb;
 						for (Square t = sq + deltas[i]; t != s; t += deltas[i])
 						{
-							bb |= t;														
+							bb |= t;
 						}
-						bb |= s;												
+						bb |= s;
 
 						int pcnt = popcount(bb & occupied);
 						if (pcnt == 1)
@@ -249,15 +249,15 @@ namespace
 
 					if (occupied & s)
 						break;
-				}			
+				}
 			}
 
 		return attack;
 	}
 
 	Bitboard step_attack(Square deltas[], int deltasSize, Square sq, Bitboard occupied, PieceType pt = NO_PIECE_TYPE)
-	{		
-		Bitboard attack = 0;		
+	{
+		Bitboard attack = 0;
 
 		for (int i = 0; i < deltasSize; ++i)
 		{
@@ -274,15 +274,15 @@ namespace
 				continue;
 
 			if (is_ok(s))
-			{								
+			{
 				if (pt == HORSE)
-				{					
+				{
 					if (!(dir == NORTH || dir == EAST || dir == SOUTH || dir == WEST))
 					{
 						if (occupied)
-						{														
+						{
 							if ((occupied & (sq + dir2)))
-								continue;							
+								continue;
 
 							attack |= s;
 						}
@@ -320,7 +320,7 @@ namespace
 				else
 					attack |= s;
 			}
-		}		
+		}
 
 		return attack;
 	}
@@ -331,16 +331,16 @@ namespace
 	void init_magics(Bitboard table[], Bitboard* attacks[], Bitboard masks[], Square deltas[], int deltasSize)
 	{
 		Bitboard edges, b;
-		int size;						
-		auto attack = (Pt == CANNON || Pt == CHARIOT) ? sliding_attack : step_attack;		
-		
+		int size;
+		auto attack = (Pt == CANNON || Pt == CHARIOT) ? sliding_attack : step_attack;
+
 		// attacks[s] is a pointer to the beginning of the attacks table for square 's'
 		attacks[PT_A1] = table;
-		
+
 		for (Square s = PT_A1; s <= PT_I10; ++s)
 		{
-			// Board edges are not considered in the relevant occupancies			
-			edges = ((Rank1BB | Rank10BB) & ~rank_bb(s)) | ((FileABB | FileIBB) & ~file_bb(s));			
+			// Board edges are not considered in the relevant occupancies
+			edges = ((Rank1BB | Rank10BB) & ~rank_bb(s)) | ((FileABB | FileIBB) & ~file_bb(s));
 
 			// Given a square 's', the mask is the bitboard of sliding attacks from
 			// 's' computed on an empty board. The index must be big enough to contain
@@ -355,18 +355,18 @@ namespace
 			// Use Carry-Rippler trick to enumerate all subsets of masks[s] and
 			// store the corresponding sliding attack bitboard in reference[].
 			b = size = 0;
-			
-			do 
-			{				
+
+			do
+			{
 				attacks[s][pext_si128(b.v, masks[s].v)] = attack(deltas, deltasSize, s, b, Pt);
 				size++;
 				b = (b - masks[s]) & masks[s];
 			} while (b);
-			
+
 			// Set the offset for the table of the next point.
 			if (s < PT_I10)
-				attacks[s + 1] = attacks[s] + size;			
-		}			
+				attacks[s + 1] = attacks[s] + size;
+		}
 	}
 
 	template <PieceType Pt>
@@ -389,7 +389,7 @@ namespace
 		for (size_t i = 0; i < tblSize; ++i)
 		{
 			bb = table[i];
-			osf.write((const char*)(bb.v), 16);			
+			osf.write((const char*)(bb.v), 16);
 		}
 		osf.close();
 
@@ -439,7 +439,7 @@ namespace
 
 		// initial the attack table
 		Bitboard b;
-		int size = 0;		
+		int size = 0;
 		attacks[PT_A1] = table;
 		for (Square s = PT_A1; s <= PT_I10; ++s)
 		{
