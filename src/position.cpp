@@ -435,6 +435,25 @@ bool Position::legal(Move m) const
 	Square to = to_sq(m);
 	Square ksq = square<GENERAL>(us);	
 
+	// Check if the move gives two kings facing each other
+	Square theirKsq = square<GENERAL>(~us);
+	Bitboard occupied = pieces() ^ from | to;
+	if (file_of(ksq) == file_of(theirKsq))
+	{
+		if (!(between_bb(ksq, theirKsq) & occupied))
+			return false;
+	}
+	else if (type_of(piece_on(from)) == GENERAL && file_of(to) == file_of(theirKsq))
+	{
+		if (!(between_bb(to, theirKsq) & occupied))
+			return false;
+	}
+
+	// If the moving piece is a king, check whether the destination
+	// square is attacked by the opponent.
+	if (type_of(piece_on(from)) == GENERAL)
+		return !(attackers_to(to) & pieces(~us));
+
 	// Check if move to space in between the canon and king
 	Bitboard canonsFacingToKing = attacks_from<CHARIOT>(ksq) & pieces(~us, CANON);
 	while (canonsFacingToKing)
@@ -454,25 +473,6 @@ bool Position::legal(Move m) const
 	// Check if the move gives a horse check
 	if (fixedPinned_pieces(us) & from)
 		return false;
-
-	// Check if the move gives two kings facing each other
-	Square theirKsq = square<GENERAL>(~us);  
-	Bitboard occupied = pieces() ^ from | to;	
-	if (file_of(ksq) == file_of(theirKsq))
-	{
-		if (!(between_bb(ksq, theirKsq) & occupied))
-			return false;
-	}
-	else if (type_of(piece_on(from)) == GENERAL && file_of(to) == file_of(theirKsq))
-	{
-		if (!(between_bb(to, theirKsq) & occupied))
-			return false;
-	}
-
-	// If the moving piece is a king, check whether the destination
-	// square is attacked by the opponent.
-	if (type_of(piece_on(from)) == GENERAL)
-		return !(attackers_to(to) & pieces(~us));
 
 	// A non-king move is legal if and only if it is not pinned or it
 	// is moving along the ray towards or away from the king.
