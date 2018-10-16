@@ -52,9 +52,9 @@ namespace
 	{
 		const bool Checks = Type == QUIET_CHECKS;
 
-		ExtMove* pTmp = moveList;		
+		ExtMove* pTmp = moveList;
 
-		moveList = generate_moves< SOLDIER, Checks>(pos, moveList, Us, target);		
+		moveList = generate_moves< SOLDIER, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves<ELEPHANT, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves< ADVISOR, Checks>(pos, moveList, Us, target);
 		moveList = generate_moves<   HORSE, Checks>(pos, moveList, Us, target);
@@ -160,14 +160,34 @@ ExtMove* generate<EVASIONS>(const Position& pos, ExtMove* moveList)
 	Square checksq = lsb(pos.checkers());
 	Bitboard target = (between_bb(checksq, ksq) | checksq) & (~pos.pieces(us));
 
+  // Generate blocking evasions of horse
+  if (type_of(pos.piece_on(checksq)) == HORSE)
+  {
+    Square blockSq;
+    if (distance<Rank>(checksq, ksq) == 2)
+      blockSq = make_square(file_of(checksq), (rank_of(checksq) + rank_of(ksq)) / 2);
+    else
+      blockSq = make_square((file_of(checksq) + file_of(ksq)) / 2, rank_of(checksq));
+    target |= blockSq;
+  }
+  // Generate blocking evasions of no trad of canon
+  else if (type_of(pos.piece_on(checksq)) == CANON)
+  {
+    Bitboard trad = between_bb(checksq, ksq) & pos.pieces(us);
+    Square tradSq = pop_lsb(&trad);
+    Bitboard b = pos.attacks_from(pos.piece_on(tradSq), tradSq) & ~pos.pieces(us);
+    while (b)
+      *moveList++ = make_move(tradSq, pop_lsb(&b));
+  }
+
 	return us == WHITE ? generate_all<WHITE, EVASIONS>(pos, moveList, target)
 		: generate_all<BLACK, EVASIONS>(pos, moveList, target);
 }
 
 /// generate<LEGAL> generates all the legal moves in the given position
 template<>
-ExtMove* generate<LEGAL>(const Position& pos, ExtMove* moveList) 
-{	
+ExtMove* generate<LEGAL>(const Position& pos, ExtMove* moveList)
+{
 	Color us = pos.side_to_move();
 	Bitboard pinned = pos.pinned_pieces(us);
 	Square ksq = pos.square<GENERAL>(us);

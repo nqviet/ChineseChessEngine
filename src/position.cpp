@@ -429,23 +429,22 @@ Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 /// Position::legal() tests whether a pseudo-legal move is legal
 
 bool Position::legal(Move m) const
-{	
+{		
 	Color us = sideToMove;
 	Square from = from_sq(m);
 	Square to = to_sq(m);
-	Square ksq = square<GENERAL>(us);	
+	Square ksq = square<GENERAL>(us);
 
 	// Check if the move gives two kings facing each other
-	Square theirKsq = square<GENERAL>(~us);
-	Bitboard occupied = pieces() ^ from | to;
-	if (file_of(ksq) == file_of(theirKsq))
-	{
-		if (!(between_bb(ksq, theirKsq) & occupied))
+	Square theirKsq = square<GENERAL>(~us);	
+	if (aligned(ksq, theirKsq, to))
+	{		
+		if (!(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
 			return false;
 	}
 	else if (type_of(piece_on(from)) == GENERAL && file_of(to) == file_of(theirKsq))
-	{
-		if (!(between_bb(to, theirKsq) & occupied))
+	{		
+		if (!(between_bb(to, theirKsq) & (pieces() ^ from | to)))
 			return false;
 	}
 
@@ -463,11 +462,14 @@ bool Position::legal(Move m) const
 			return false;
 	}
 
-	// Check if the move interupts canon
+	// Check if the move interupts canon check
 	Bitboard checker = checkers();
 	Square checkerSq = lsb(checker);
 	if (checker && type_of(piece_on(checkerSq)) == CANON
-		&& (!((between_bb(checkerSq, ksq) | checkerSq) & to) || aligned(from, to, checkerSq)))
+		// any move that does not block the check or voids the trad shall be considered as illegal
+		&& ((((between_bb(checkerSq, ksq) | checkerSq) & to) || (between_bb(checkerSq, ksq) & from)) == false
+			// any move that only translates the trad to somewhere between the checker and King is also illegal
+			|| (aligned(checkerSq, from, ksq) && aligned(checkerSq, to, ksq))))
 		return false;
 
 	// Check if the move gives a horse check
@@ -479,7 +481,7 @@ bool Position::legal(Move m) const
 	if((pinned_pieces(us) & from) && !aligned(from, to, ksq))
 		return false;
 
-	return !receives_canon_check(m);	
+	return !receives_canon_check(m);
 }
 
 /// Position::pseudo_legal() takes a random move and tests whether the move is
