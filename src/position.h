@@ -88,6 +88,7 @@ public:
 	Bitboard attackers_to(Square s, Bitboard occupied) const;
   Bitboard horses_to(Square s, Bitboard occupied) const;
   Bitboard horses_to(Square s) const;
+  Bitboard horseSq_to(Square s) const;
 	Bitboard attacks_from(Piece pc, Square s) const;
 	template<PieceType> Bitboard attacks_from(Square s) const;
 	template<PieceType> Bitboard attacks_from(Square s, Color c) const;

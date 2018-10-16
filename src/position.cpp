@@ -47,6 +47,18 @@ PieceType min_attacker<GENERAL>(const Bitboard*, Square, Bitboard, Bitboard&, Bi
 	return GENERAL; // No need to update bitboards: it is the last cycle
 }
 
+int calculateHorseDir(Square to, Square from)
+{
+	Square dir = DIR_NONE;
+	
+	if (rank_of(to) == rank_of(from) + 2) dir = NORTH;
+	else if (rank_of(to) == rank_of(from) - 2) dir = SOUTH;
+	else if (file_of(to) == file_of(from) + 2) dir = EAST;
+	else if (file_of(to) == file_of(from) - 2) dir = WEST;
+
+	return dir;
+}
+
 } // namespace
 
 /// operator<<(Position) returns an ASCII representation of the position
@@ -175,8 +187,8 @@ void Position::set_check_info(StateInfo* si) const
 	Square ksq = square<GENERAL>(~sideToMove);
 
 	si->checkSquares[SOLDIER]	= attacks_from<SOLDIER>(ksq, ~sideToMove);
-	si->checkSquares[HORSE]		= horses_to(ksq);
-	si->checkSquares[CANON]	= attacks_from<CANON>(ksq);
+	si->checkSquares[HORSE]		= horseSq_to(ksq);
+	si->checkSquares[CANON]		= attacks_from<CANON>(ksq);
 	si->checkSquares[CHARIOT]	= attacks_from<CHARIOT>(ksq);
 	si->checkSquares[GENERAL]	= 0;
 }
@@ -335,13 +347,7 @@ Bitboard Position::horse_blockers(Bitboard sliders, Square s, Bitboard& pinners)
 	while (snipers)
 	{
 		Square sniperSq = pop_lsb(&snipers);
-
-		Square dir = DIR_NONE;
-		// Calculate the horse direction to the square
-		if (rank_of(s) == rank_of(sniperSq) + 2) dir = NORTH;
-		else if (rank_of(s) == rank_of(sniperSq) - 2) dir = SOUTH;
-		else if (file_of(s) == file_of(sniperSq) + 2) dir = EAST;
-		else if (file_of(s) == file_of(sniperSq) - 2) dir = WEST;
+		int dir = calculateHorseDir(s, sniperSq);
 
 		// Check if there is a blocking piece
 		Bitboard b = SquareBB[sniperSq + dir] & pieces();
@@ -366,22 +372,39 @@ Bitboard Position::horses_to(Square s, Bitboard occupied) const
 	while (horses)
 	{
 		Square horseSq = pop_lsb(&horses);
-
-		Square dir = DIR_NONE;
-		// Calculate the horse direction to the square
-		if (rank_of(s) == rank_of(horseSq) + 2) dir = NORTH;
-		else if (rank_of(s) == rank_of(horseSq) - 2) dir = SOUTH;
-		else if (file_of(s) == file_of(horseSq) + 2) dir = EAST;
-		else if (file_of(s) == file_of(horseSq) - 2) dir = WEST;
+		int dir = calculateHorseDir(s, horseSq);
 
 		// Check if there is a blocking piece
-		Bitboard b = SquareBB[horseSq + dir] & pieces();
+		Bitboard b = SquareBB[horseSq + dir] & occupied;
 		if (!b)
 		{
 			result |= horseSq;
 		}
 	}
 	
+	return result;
+}
+
+/// Return a bitboard of all squares from which a horse can attack to a given square.
+
+Bitboard Position::horseSq_to(Square s) const
+{
+	Bitboard result;
+	Bitboard squares = attacks_bb<HORSE>(s, 0);
+
+	while (squares)
+	{
+		Square sq = pop_lsb(&squares);
+		int dir = calculateHorseDir(s, sq);
+
+		// Check if there is a blocking piece
+		Bitboard b = SquareBB[sq + dir] & pieces();
+		if (!b)
+		{
+			result |= sq;
+		}
+	}
+
 	return result;
 }
 
