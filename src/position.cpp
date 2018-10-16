@@ -50,7 +50,7 @@ PieceType min_attacker<GENERAL>(const Bitboard*, Square, Bitboard, Bitboard&, Bi
 int calculateHorseDir(Square to, Square from)
 {
 	Square dir = DIR_NONE;
-	
+
 	if (rank_of(to) == rank_of(from) + 2) dir = NORTH;
 	else if (rank_of(to) == rank_of(from) - 2) dir = SOUTH;
 	else if (file_of(to) == file_of(from) + 2) dir = EAST;
@@ -368,7 +368,7 @@ Bitboard Position::horses_to(Square s, Bitboard occupied) const
 {
 	Bitboard result;
 	Bitboard horses = attacks_bb<HORSE>(s, 0) & pieces(HORSE);
-	
+
 	while (horses)
 	{
 		Square horseSq = pop_lsb(&horses);
@@ -381,7 +381,7 @@ Bitboard Position::horses_to(Square s, Bitboard occupied) const
 			result |= horseSq;
 		}
 	}
-	
+
 	return result;
 }
 
@@ -429,18 +429,13 @@ Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 /// Position::legal() tests whether a pseudo-legal move is legal
 
 bool Position::legal(Move m) const
-{
+{	
 	Color us = sideToMove;
 	Square from = from_sq(m);
 	Square to = to_sq(m);
-
-	// If the moving piece is a king, check whether the destination
-	// square is attacked by the opponent.
-	if (type_of(piece_on(from)) == GENERAL)
-		return !(attackers_to(to) & pieces(~us));
+	Square ksq = square<GENERAL>(us);	
 
 	// Check if move to space in between the canon and king
-	Square ksq = square<GENERAL>(us);
 	Bitboard canonsFacingToKing = attacks_from<CHARIOT>(ksq) & pieces(~us, CANON);
 	while (canonsFacingToKing)
 	{
@@ -449,28 +444,42 @@ bool Position::legal(Move m) const
 			return false;
 	}
 
-	// Check if the move interupts canon 
+	// Check if the move interupts canon
 	Bitboard checker = checkers();
 	Square checkerSq = lsb(checker);
 	if (checker && type_of(piece_on(checkerSq)) == CANON
-		&& (!((between_bb(checkerSq, square<GENERAL>(us)) | checkerSq) & to) || aligned(from, to, checkerSq)))
+		&& (!((between_bb(checkerSq, ksq) | checkerSq) & to) || aligned(from, to, checkerSq)))
 		return false;
 
+	// Check if the move gives a horse check
 	if (fixedPinned_pieces(us) & from)
 		return false;
 
+	// Check if the move gives two kings facing each other
+	Square theirKsq = square<GENERAL>(~us);  
+	Bitboard occupied = pieces() ^ from | to;	
+	if (file_of(ksq) == file_of(theirKsq))
+	{
+		if (!(between_bb(ksq, theirKsq) & occupied))
+			return false;
+	}
+	else if (type_of(piece_on(from)) == GENERAL && file_of(to) == file_of(theirKsq))
+	{
+		if (!(between_bb(to, theirKsq) & occupied))
+			return false;
+	}
+
+	// If the moving piece is a king, check whether the destination
+	// square is attacked by the opponent.
+	if (type_of(piece_on(from)) == GENERAL)
+		return !(attackers_to(to) & pieces(~us));
+
 	// A non-king move is legal if and only if it is not pinned or it
 	// is moving along the ray towards or away from the king.
-	if((pinned_pieces(us) & from) && !aligned(from, to, square<GENERAL>(us)))
+	if((pinned_pieces(us) & from) && !aligned(from, to, ksq))
 		return false;
 
-	return !receives_canon_check(m);
-
-	//std::cout << "legal: " << ret << " checker: " << popcount(checkers())
-	//								<< " canon: " << bool( type_of(piece_on(lsb(checkers()))) == CANON)
-	//								<< " between-to: " << bool((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to)
-	//								<< " align: " << bool (aligned(from, to, lsb(checkers())))
-	//								<< std::endl;
+	return !receives_canon_check(m);	
 }
 
 /// Position::pseudo_legal() takes a random move and tests whether the move is

@@ -118,8 +118,12 @@ void Bitboards::init()
 					{
 						if (pt == SOLDIER && relative_rank(c, s) <= RANK_5 && file_of(s) != file_of(to))
 							continue;
-						else if ((pt == ADVISOR || pt == GENERAL) &&
-							(file_of(to) == FILE_C || file_of(to) == FILE_G || relative_rank(c, to) == RANK_4))
+						
+						if ((pt == ADVISOR || pt == GENERAL) &&
+							(file_of(to) == FILE_C || file_of(to) == FILE_G || relative_rank(c, to) > RANK_3))
+							continue;
+
+						if (pt == ADVISOR && (distance<File>(to, s) == 0 || distance<Rank>(to, s) == 0))
 							continue;
 
 						StepAttacksBB[make_piece(c, pt)][s] |= to;
