@@ -463,17 +463,16 @@ bool Position::legal(Move m) const
 	Square ksq = square<GENERAL>(us);
 	Square theirKsq = square<GENERAL>(~us);
 
-
 	if (type_of(piece_on(from)) == GENERAL)
 	{
-		if (file_of(to) == file_of(theirKsq))
-		{
-			if (!(between_bb(to, theirKsq) & (pieces() ^ from | to)))
-				return false;
-		}
+		// check whether the destination square is attacked by the opponent.
+		if (attackers_to(to) & pieces(~us))
+			return false;
+		// check whether two kings face each other
+		else if (file_of(to) == file_of(theirKsq) && !(between_bb(to, theirKsq) & (pieces() ^ from | to)))
+			return false;
 		else
-			// check whether the destination square is attacked by the opponent.
-			return !(attackers_to(to) & pieces(~us));
+			return true;
 	}
 
 	// Check if the move gives two kings facing each other
