@@ -17,12 +17,20 @@ namespace
 		{
 			if (Checks)
 			{
-				if ((Pt == HORSE || Pt == CHARIOT || Pt == CANON)
+				if ((Pt == HORSE || Pt == CHARIOT)
 					&& !(PseudoAttacks[Pt][from] & target & pos.check_squares(Pt)))
 					continue;
 
+        if (Pt == CANON
+          && !(PseudoAttacks[CHARIOT][from] & target & pos.check_squares(Pt)))
+          continue;
+
 				if (pos.discovered_check_candidates() & from)
 					continue;
+
+        // check if a piece at 'from' is a canon which faces to the King
+        if (pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON) & from)
+          continue;
 			}
 
 			Bitboard b;
@@ -114,15 +122,53 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 		Square from = pop_lsb(&dc);
 		PieceType pt = type_of(pos.piece_on(from));
 
-		Bitboard b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
-		if (pt == CANON)
-		{
-			b |= pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
-		}
+		Bitboard b;
+		if (pt == SOLDIER)
+		  b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
+		else if(pt == CANON)
+		  b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+		else
+		  b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
 
 		while (b)
-			*moveList++ = make_move(from, pop_lsb(&b));
+		{
+		  Square to = pop_lsb(&b);
+		  if (pt == CHARIOT || pt == CANON || pt == SOLDIER)
+		  {
+			if (!aligned(from, to, pos.square<GENERAL>(~us)))
+			  *moveList++ = make_move(from, to);
+		  }
+		  else
+			*moveList++ = make_move(from, to);
+		}
 	}
+
+  Bitboard canonFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
+  if (canonFacingToKing)
+  {
+    Square canonFacingToKingSq = lsb(canonFacingToKing);
+    Bitboard pieces = pos.pieces(us) ^ canonFacingToKingSq;
+    while (pieces)
+    {
+      Square from = pop_lsb(&pieces);
+      PieceType pt = type_of(pos.piece_on(from));
+
+      Bitboard b;
+      if (pt == SOLDIER)
+        b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
+      else if(pt == CANON)
+        b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+      else
+        b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
+
+      while (b)
+      {
+        Square to = pop_lsb(&b);
+        if (aligned(pos.square<GENERAL>(~us), canonFacingToKingSq, to))
+          *moveList++ = make_move(from, to);
+      }
+    }
+  }
 
 	return us == WHITE ? generate_all<WHITE, QUIET_CHECKS>(pos, moveList, ~pos.pieces())
 		: generate_all<BLACK, QUIET_CHECKS>(pos, moveList, ~pos.pieces());

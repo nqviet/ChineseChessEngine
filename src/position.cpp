@@ -186,7 +186,7 @@ void Position::set_check_info(StateInfo* si) const
 
 	Square ksq = square<GENERAL>(~sideToMove);
 
-	si->checkSquares[SOLDIER]	= attacks_from<SOLDIER>(ksq, ~sideToMove);
+	si->checkSquares[SOLDIER]	= soldierSq_to(ksq, sideToMove);
 	si->checkSquares[HORSE]		= horseSq_to(ksq);
 	si->checkSquares[CANON]		= attacks_from<CANON>(ksq);
 	si->checkSquares[CHARIOT]	= attacks_from<CHARIOT>(ksq);
@@ -385,7 +385,7 @@ Bitboard Position::horses_to(Square s, Bitboard occupied) const
 	return result;
 }
 
-/// Return a bitboard of all squares from which a horse can attack to a given square.
+/// Return a bitboard of all squares from which horses can attack to the given square.
 
 Bitboard Position::horseSq_to(Square s) const
 {
@@ -406,6 +406,33 @@ Bitboard Position::horseSq_to(Square s) const
 	}
 
 	return result;
+}
+
+/// Return a bitboard off all squares from which soldiers can attack to the given square
+/// 'c' is the color of soldiers
+Bitboard Position::soldierSq_to(Square s, Color c) const
+{
+  Bitboard squares;
+  if (c == WHITE)
+  {
+    squares |= s + SOUTH;
+    if (relative_rank(c, s) > RANK_5)
+    {
+      squares |= s + EAST;
+      squares |= s + WEST;
+    }
+  }
+  else
+  {
+    squares |= s + NORTH;
+    if (relative_rank(c, s) > RANK_5)
+    {
+      squares |= s + EAST;
+      squares |= s + WEST;
+    }
+  }
+
+  return squares & ~pieces(c);
 }
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
@@ -429,21 +456,21 @@ Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 /// Position::legal() tests whether a pseudo-legal move is legal
 
 bool Position::legal(Move m) const
-{		
+{
 	Color us = sideToMove;
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 	Square ksq = square<GENERAL>(us);
 
 	// Check if the move gives two kings facing each other
-	Square theirKsq = square<GENERAL>(~us);	
+	Square theirKsq = square<GENERAL>(~us);
 	if (aligned(ksq, theirKsq, to))
-	{		
+	{
 		if (!(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
 			return false;
 	}
 	else if (type_of(piece_on(from)) == GENERAL && file_of(to) == file_of(theirKsq))
-	{		
+	{
 		if (!(between_bb(to, theirKsq) & (pieces() ^ from | to)))
 			return false;
 	}
@@ -539,7 +566,7 @@ bool Position::gives_check(Move m) const
 	Square to = to_sq(m);
 
 	// Is there a direct check?
-	if (type_of(piece_on(from)) != CANON && (st->checkSquares[type_of(piece_on(from))] & to))
+	if (st->checkSquares[type_of(piece_on(from))] & to)
 		return true;
 
 	if (gives_canon_check(m))
@@ -553,7 +580,7 @@ bool Position::gives_check(Move m) const
 	return false;
 }
 
-/// Position::gives_check() tests whether a pseudo-legal canon move gives a check
+/// Tests whether a pseudo-legal move gives a canon check
 
 bool Position::gives_canon_check(Move m) const
 {
@@ -570,7 +597,7 @@ bool Position::gives_canon_check(Move m) const
 	return attackers & canons;
 }
 
-/// Position::gives_check() tests whether a pseudo-legal canon move receives a check
+/// Tests whether a pseudo-legal move receives a canon check
 
 bool Position::receives_canon_check(Move m) const
 {
