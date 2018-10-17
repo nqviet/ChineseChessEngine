@@ -463,9 +463,6 @@ bool Position::legal(Move m) const
 	Square ksq = square<GENERAL>(us);
 	Square theirKsq = square<GENERAL>(~us);
 
-	// Check if the move gives two kings facing each other
-	if (!(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
-		return false;
 
 	if (type_of(piece_on(from)) == GENERAL)
 	{
@@ -478,6 +475,10 @@ bool Position::legal(Move m) const
 			// check whether the destination square is attacked by the opponent.
 			return !(attackers_to(to) & pieces(~us));
 	}
+
+	// Check if the move gives two kings facing each other
+	else if (file_of(ksq) == file_of(theirKsq) && !(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
+		return false;
 
 	// Check if move into space between the canon and king
 	Bitboard canonsFacingToKing = attacks_from<CHARIOT>(ksq) & pieces(~us, CANON);
