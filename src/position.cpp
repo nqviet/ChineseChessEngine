@@ -456,14 +456,15 @@ Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 /// Position::legal() tests whether a pseudo-legal move is legal
 
 bool Position::legal(Move m) const
-{
+{	
 	Color us = sideToMove;
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 	Square ksq = square<GENERAL>(us);
+	Square theirKsq = square<GENERAL>(~us);
 
 	// Check if the move gives two kings facing each other
-	Square theirKsq = square<GENERAL>(~us);
+	
 	if (aligned(ksq, theirKsq, to))
 	{
 		if (!(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
@@ -480,7 +481,7 @@ bool Position::legal(Move m) const
 	if (type_of(piece_on(from)) == GENERAL)
 		return !(attackers_to(to) & pieces(~us));
 
-	// Check if move to space in between the canon and king
+	// Check if move into space between the canon and king
 	Bitboard canonsFacingToKing = attacks_from<CHARIOT>(ksq) & pieces(~us, CANON);
 	while (canonsFacingToKing)
 	{
@@ -506,6 +507,10 @@ bool Position::legal(Move m) const
 	// A non-king move is legal if and only if it is not pinned or it
 	// is moving along the ray towards or away from the king.
 	if ((pinned_pieces(us) & from) && !aligned(from, to, ksq))
+		return false;
+
+	// Check if two kings face each other
+	if (!(between_bb(ksq, theirKsq) & (pieces() ^ from | to)))
 		return false;
 
 	return !receives_canon_check(m);

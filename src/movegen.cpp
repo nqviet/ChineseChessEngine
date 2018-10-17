@@ -243,7 +243,7 @@ ExtMove* generate<LEGAL>(const Position& pos, ExtMove* moveList)
 	Bitboard pinned = pos.pinned_pieces(us);
 	Square ksq = pos.square<GENERAL>(us);
 	Square theirKsq = pos.square<GENERAL>(~us);
-	bool canonsFacingToKing = pos.attacks_from<CHARIOT>(ksq) & pos.pieces(~us, CANON);
+	bool canonsFacingKing = pos.attacks_from<CHARIOT>(ksq) & pos.pieces(~us, CANON);
 	bool flyingKingCandidate = popcount(between_bb(ksq, theirKsq) & pos.pieces()) == 1;
 	ExtMove* cur = moveList;
 
@@ -251,7 +251,7 @@ ExtMove* generate<LEGAL>(const Position& pos, ExtMove* moveList)
 		: generate<NON_EVASIONS>(pos, moveList);
 
 	while (cur != moveList)
-		if ((pinned || from_sq(*cur) == ksq || canonsFacingToKing || flyingKingCandidate || pos.checkers())
+		if ((pinned || from_sq(*cur) == ksq || canonsFacingKing || flyingKingCandidate || pos.checkers())
 			&& !pos.legal(*cur))
 			*cur = (--moveList)->move;
 		else
