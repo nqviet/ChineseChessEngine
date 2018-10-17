@@ -21,16 +21,16 @@ namespace
 					&& !(PseudoAttacks[Pt][from] & target & pos.check_squares(Pt)))
 					continue;
 
-        if (Pt == CANON
-          && !(PseudoAttacks[CHARIOT][from] & target & pos.check_squares(Pt)))
-          continue;
+				if (Pt == CANON
+					&& !(PseudoAttacks[CHARIOT][from] & target & pos.check_squares(Pt)))
+					continue;
 
 				if (pos.discovered_check_candidates() & from)
 					continue;
 
-        // check if a piece at 'from' is a canon which faces to the King
-        if (pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON) & from)
-          continue;
+				// check if a piece at 'from' is a canon which faces to the King
+				if (pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON) & from)
+					continue;
 			}
 
 			Bitboard b;
@@ -124,51 +124,51 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 
 		Bitboard b;
 		if (pt == SOLDIER)
-		  b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
-		else if(pt == CANON)
-		  b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+			b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
+		else if (pt == CANON)
+			b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
 		else
-		  b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
+			b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
 
 		while (b)
 		{
-		  Square to = pop_lsb(&b);
-		  if (pt == CHARIOT || pt == CANON || pt == SOLDIER)
-		  {
-			if (!aligned(from, to, pos.square<GENERAL>(~us)))
-			  *moveList++ = make_move(from, to);
-		  }
-		  else
-			*moveList++ = make_move(from, to);
+			Square to = pop_lsb(&b);
+			if (pt == CHARIOT || pt == CANON || pt == SOLDIER)
+			{
+				if (!aligned(from, to, pos.square<GENERAL>(~us)))
+					*moveList++ = make_move(from, to);
+			}
+			else
+				*moveList++ = make_move(from, to);
 		}
 	}
 
-  Bitboard canonFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
-  if (canonFacingToKing)
-  {
-    Square canonFacingToKingSq = lsb(canonFacingToKing);
-    Bitboard pieces = pos.pieces(us) ^ canonFacingToKingSq;
-    while (pieces)
-    {
-      Square from = pop_lsb(&pieces);
-      PieceType pt = type_of(pos.piece_on(from));
+	Bitboard canonFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
+	if (canonFacingToKing)
+	{
+		Square canonFacingToKingSq = lsb(canonFacingToKing);
+		Bitboard pieces = pos.pieces(us) ^ canonFacingToKingSq;
+		while (pieces)
+		{
+			Square from = pop_lsb(&pieces);
+			PieceType pt = type_of(pos.piece_on(from));
 
-      Bitboard b;
-      if (pt == SOLDIER)
-        b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
-      else if(pt == CANON)
-        b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
-      else
-        b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
+			Bitboard b;
+			if (pt == SOLDIER)
+				b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
+			else if (pt == CANON)
+				b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+			else
+				b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
 
-      while (b)
-      {
-        Square to = pop_lsb(&b);
-        if (aligned(pos.square<GENERAL>(~us), canonFacingToKingSq, to))
-          *moveList++ = make_move(from, to);
-      }
-    }
-  }
+			while (b)
+			{
+				Square to = pop_lsb(&b);
+				if (aligned(pos.square<GENERAL>(~us), canonFacingToKingSq, to))
+					*moveList++ = make_move(from, to);
+			}
+		}
+	}
 
 	return us == WHITE ? generate_all<WHITE, QUIET_CHECKS>(pos, moveList, ~pos.pieces())
 		: generate_all<BLACK, QUIET_CHECKS>(pos, moveList, ~pos.pieces());
@@ -200,31 +200,36 @@ ExtMove* generate<EVASIONS>(const Position& pos, ExtMove* moveList)
 		*moveList++ = make_move(ksq, pop_lsb(&b));
 
 	if (more_than_one(pos.checkers()))
-		return moveList; // Double check, only a king move can save the day
+	{
+		Bitboard ch = pos.checkers();
+		Square first = pop_lsb(&ch), second = pop_lsb(&ch);
+		if (!aligned(first, second, pos.square<GENERAL>(us)))
+			return moveList; // Double check, only a king move can save the day
+	}
 
 	// Generate blocking evasions or captures of the checking piece
 	Square checksq = lsb(pos.checkers());
 	Bitboard target = (between_bb(checksq, ksq) | checksq) & (~pos.pieces(us));
 
-  // Generate blocking evasions of horse
-  if (type_of(pos.piece_on(checksq)) == HORSE)
-  {
-    Square blockSq;
-    if (distance<Rank>(checksq, ksq) == 2)
-      blockSq = make_square(file_of(checksq), (rank_of(checksq) + rank_of(ksq)) / 2);
-    else
-      blockSq = make_square((file_of(checksq) + file_of(ksq)) / 2, rank_of(checksq));
-    target |= blockSq;
-  }
-  // Generate blocking evasions of no trad of canon
-  else if (type_of(pos.piece_on(checksq)) == CANON)
-  {
-    Bitboard trad = between_bb(checksq, ksq) & pos.pieces(us);
-    Square tradSq = pop_lsb(&trad);
-    Bitboard b = pos.attacks_from(pos.piece_on(tradSq), tradSq) & ~pos.pieces(us);
-    while (b)
-      *moveList++ = make_move(tradSq, pop_lsb(&b));
-  }
+	// Generate blocking evasions of horse
+	if (type_of(pos.piece_on(checksq)) == HORSE)
+	{
+		Square blockSq;
+		if (distance<Rank>(checksq, ksq) == 2)
+			blockSq = make_square(file_of(checksq), (rank_of(checksq) + rank_of(ksq)) / 2);
+		else
+			blockSq = make_square((file_of(checksq) + file_of(ksq)) / 2, rank_of(checksq));
+		target |= blockSq;
+	}
+	// Generate blocking evasions of no trad of canon
+	else if (type_of(pos.piece_on(checksq)) == CANON)
+	{
+		Bitboard trad = between_bb(checksq, ksq) & pos.pieces(us);
+		Square tradSq = pop_lsb(&trad);
+		Bitboard b = pos.attacks_from(pos.piece_on(tradSq), tradSq) & ~pos.pieces(us);
+		while (b)
+			*moveList++ = make_move(tradSq, pop_lsb(&b));
+	}
 
 	return us == WHITE ? generate_all<WHITE, EVASIONS>(pos, moveList, target)
 		: generate_all<BLACK, EVASIONS>(pos, moveList, target);

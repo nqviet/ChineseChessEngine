@@ -21,43 +21,43 @@ namespace Zobrist
 namespace
 {
 
-const std::string PieceToChar(" PNBCRAK pnbcrak");
+	const std::string PieceToChar(" PNBCRAK pnbcrak");
 
-// min_attacker() is a helper function used by see() to locate the least
-// valuable attacker for the side to move, remove the attacker we just found
-// from the bitboards and scan for new X-ray attacks behind it.
+	// min_attacker() is a helper function used by see() to locate the least
+	// valuable attacker for the side to move, remove the attacker we just found
+	// from the bitboards and scan for new X-ray attacks behind it.
 
-template<int Pt>
-PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
-	Bitboard& occupied, Bitboard& attackers)
-{
-	Bitboard b = stmAttackers & bb[Pt];
-	if (!b)
-		return min_attacker<Pt + 1>(bb, to, stmAttackers, occupied, attackers);
+	template<int Pt>
+	PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
+		Bitboard& occupied, Bitboard& attackers)
+	{
+		Bitboard b = stmAttackers & bb[Pt];
+		if (!b)
+			return min_attacker<Pt + 1>(bb, to, stmAttackers, occupied, attackers);
 
-	occupied ^= b & ~(b - 1);
-	attackers |= attacks_bb<PieceType(Pt)>(to, occupied) & bb[Pt];
-	attackers &= occupied; // After X-ray that may add already processed pieces
+		occupied ^= b & ~(b - 1);
+		attackers |= attacks_bb<PieceType(Pt)>(to, occupied) & bb[Pt];
+		attackers &= occupied; // After X-ray that may add already processed pieces
 
-	return (PieceType)Pt;
-}
+		return (PieceType)Pt;
+	}
 
-template<>
-PieceType min_attacker<GENERAL>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
-	return GENERAL; // No need to update bitboards: it is the last cycle
-}
+	template<>
+	PieceType min_attacker<GENERAL>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
+		return GENERAL; // No need to update bitboards: it is the last cycle
+	}
 
-int calculateHorseDir(Square to, Square from)
-{
-	Square dir = DIR_NONE;
+	int calculateHorseDir(Square to, Square from)
+	{
+		Square dir = DIR_NONE;
 
-	if (rank_of(to) == rank_of(from) + 2) dir = NORTH;
-	else if (rank_of(to) == rank_of(from) - 2) dir = SOUTH;
-	else if (file_of(to) == file_of(from) + 2) dir = EAST;
-	else if (file_of(to) == file_of(from) - 2) dir = WEST;
+		if (rank_of(to) == rank_of(from) + 2) dir = NORTH;
+		else if (rank_of(to) == rank_of(from) - 2) dir = SOUTH;
+		else if (file_of(to) == file_of(from) + 2) dir = EAST;
+		else if (file_of(to) == file_of(from) - 2) dir = WEST;
 
-	return dir;
-}
+		return dir;
+	}
 
 } // namespace
 
@@ -73,8 +73,8 @@ std::ostream& operator<<(std::ostream& os, const Position& pos)
 		{
 			c = PieceToChar[pos.piece_on(make_square(f, r))];
 			s += c != " "
-					? f != FILE_I ? c + "---" : c
-					: f != FILE_I ? "----" : "-";
+				? f != FILE_I ? c + "---" : c
+				: f != FILE_I ? "----" : "-";
 		}
 
 		if (r == RANK_6)
@@ -112,25 +112,25 @@ void Position::init()
 
 Position& Position::set(const std::string& fenStr, StateInfo* si, Thread* th)
 {
-/*
-	A FEN string defines a particular position using only the ASCII character set.
+	/*
+		A FEN string defines a particular position using only the ASCII character set.
 
-	A FEN string contains six fields separated by a space. The fields are:
+		A FEN string contains six fields separated by a space. The fields are:
 
-	1) Piece placement (from white's perspective). Each rank is described, starting
-      with rank 10 and ending with rank 1. Within each rank, the contents of each
-      square are described from file A through file I. Following the Standard
-      Algebraic Notation (SAN), each piece is identified by a single letter taken
-      from the standard English names. White pieces are designated using upper-case
-      letters ("PNBRAKC") whilst Black uses lowercase ("pnbrakc"). Blank points are
-      noted using digits 1 through 9 (the number of blank squares), and "/"
-      separates ranks.
+		1) Piece placement (from white's perspective). Each rank is described, starting
+		  with rank 10 and ending with rank 1. Within each rank, the contents of each
+		  square are described from file A through file I. Following the Standard
+		  Algebraic Notation (SAN), each piece is identified by a single letter taken
+		  from the standard English names. White pieces are designated using upper-case
+		  letters ("PNBRAKC") whilst Black uses lowercase ("pnbrakc"). Blank points are
+		  noted using digits 1 through 9 (the number of blank squares), and "/"
+		  separates ranks.
 
-	 2) Active color. "w" means white moves next, "b" means black.
+		 2) Active color. "w" means white moves next, "b" means black.
 
-	 3) Fullmove number. The number of the full move. It starts at 1, and is
-	 incremented after Black's move.
-*/
+		 3) Fullmove number. The number of the full move. It starts at 1, and is
+		 incremented after Black's move.
+	*/
 	unsigned char token;
 	size_t idx;
 	Square sq = PT_A10;
@@ -186,11 +186,11 @@ void Position::set_check_info(StateInfo* si) const
 
 	Square ksq = square<GENERAL>(~sideToMove);
 
-	si->checkSquares[SOLDIER]	= soldierSq_to(ksq, sideToMove);
-	si->checkSquares[HORSE]		= horseSq_to(ksq);
-	si->checkSquares[CANON]		= attacks_from<CANON>(ksq);
-	si->checkSquares[CHARIOT]	= attacks_from<CHARIOT>(ksq);
-	si->checkSquares[GENERAL]	= 0;
+	si->checkSquares[SOLDIER] = soldierSq_to(ksq, sideToMove);
+	si->checkSquares[HORSE] = horseSq_to(ksq);
+	si->checkSquares[CANON] = attacks_from<CANON>(ksq);
+	si->checkSquares[CHARIOT] = attacks_from<CHARIOT>(ksq);
+	si->checkSquares[GENERAL] = 0;
 }
 
 /// Position::set_state() computes the hash keys of the position, and other
@@ -412,27 +412,27 @@ Bitboard Position::horseSq_to(Square s) const
 /// 'c' is the color of soldiers
 Bitboard Position::soldierSq_to(Square s, Color c) const
 {
-  Bitboard squares;
-  if (c == WHITE)
-  {
-    squares |= s + SOUTH;
-    if (relative_rank(c, s) > RANK_5)
-    {
-      squares |= s + EAST;
-      squares |= s + WEST;
-    }
-  }
-  else
-  {
-    squares |= s + NORTH;
-    if (relative_rank(c, s) > RANK_5)
-    {
-      squares |= s + EAST;
-      squares |= s + WEST;
-    }
-  }
+	Bitboard squares;
+	if (c == WHITE)
+	{
+		squares |= s + SOUTH;
+		if (relative_rank(c, s) > RANK_5)
+		{
+			squares |= s + EAST;
+			squares |= s + WEST;
+		}
+	}
+	else
+	{
+		squares |= s + NORTH;
+		if (relative_rank(c, s) > RANK_5)
+		{
+			squares |= s + EAST;
+			squares |= s + WEST;
+		}
+	}
 
-  return squares & ~pieces(c);
+	return squares & ~pieces(c);
 }
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
@@ -445,7 +445,7 @@ Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 		| (attacks_from<SOLDIER >(s, WHITE)     & pieces(WHITE, SOLDIER) & rank_bb(s))
 		| (attacks_from<SOLDIER	>(s, WHITE)		& pieces(BLACK, SOLDIER) & file_bb(s))
 		| (attacks_from<SOLDIER	>(s, BLACK)		& pieces(BLACK, SOLDIER) & rank_bb(s))
-		| (horses_to			 (s, occupied)	& pieces(HORSE))
+		| (horses_to(s, occupied)	& pieces(HORSE))
 		| (attacks_bb<CHARIOT	>(s, occupied)	& pieces(CHARIOT))
 		| (attacks_bb<CANON	>(s, occupied)	& pieces(CANON))
 		| (attacks_bb<ELEPHANT  >(s, occupied)	& pieces(ELEPHANT))
@@ -505,7 +505,7 @@ bool Position::legal(Move m) const
 
 	// A non-king move is legal if and only if it is not pinned or it
 	// is moving along the ray towards or away from the king.
-	if((pinned_pieces(us) & from) && !aligned(from, to, ksq))
+	if ((pinned_pieces(us) & from) && !aligned(from, to, ksq))
 		return false;
 
 	return !receives_canon_check(m);
@@ -543,7 +543,12 @@ bool Position::pseudo_legal(const Move m) const
 		{
 			// Double check? In this case a king move is required
 			if (more_than_one(checkers()))
-				return false;
+			{
+				Bitboard ch = checkers();
+				Square first = pop_lsb(&ch), second = pop_lsb(&ch);
+				if (!aligned(first, second, square<GENERAL>(us)))
+					return false;
+			}
 
 			// Our move must be a blocking evasion or a capture of the checking piece
 			if (!((between_bb(lsb(checkers()), square<GENERAL>(us)) | checkers()) & to))
@@ -701,14 +706,14 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck)
 	// Calculate checkers bitboard (if move gives check)
 	st->checkersBB = givesCheck ? attackers_to(square<GENERAL>(them)) & pieces(us) : 0;
 
-//#ifdef _DEBUG
-//	if (square<GENERAL>(them) == PT_NONE)
-//	{
-//		std::cout << "ERROR" << std::endl;
-//		std::cout << *this << std::endl;
-//		assert(false);
-//	}
-//#endif
+	//#ifdef _DEBUG
+	//	if (square<GENERAL>(them) == PT_NONE)
+	//	{
+	//		std::cout << "ERROR" << std::endl;
+	//		std::cout << *this << std::endl;
+	//		assert(false);
+	//	}
+	//#endif
 
 	sideToMove = ~sideToMove;
 
