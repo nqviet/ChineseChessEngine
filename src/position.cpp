@@ -584,7 +584,8 @@ bool Position::gives_check(Move m) const
 	}
 
 	// Is there a direct check?
-	if (st->checkSquares[type_of(piece_on(from))] & to)
+	PieceType pt = type_of(piece_on(from));
+	if (pt != CANON && st->checkSquares[pt] & to)
 		return true;
 
 	return false;
