@@ -440,17 +440,18 @@ Bitboard Position::soldierSq_to(Square s, Color c) const
 
 Bitboard Position::attackers_to(Square s, Bitboard occupied) const
 {
-
 	return (attacks_from<SOLDIER>(s, BLACK)     & pieces(WHITE, SOLDIER) & file_bb(s))
 		| (attacks_from<SOLDIER >(s, WHITE)     & pieces(WHITE, SOLDIER) & rank_bb(s))
 		| (attacks_from<SOLDIER	>(s, WHITE)		& pieces(BLACK, SOLDIER) & file_bb(s))
 		| (attacks_from<SOLDIER	>(s, BLACK)		& pieces(BLACK, SOLDIER) & rank_bb(s))
-		| (horses_to(s, occupied)	& pieces(HORSE))
+		| (horses_to(s, occupied)				& pieces(HORSE))
 		| (attacks_bb<CHARIOT	>(s, occupied)	& pieces(CHARIOT))
-		| (attacks_bb<CANON	>(s, occupied)	& pieces(CANON))
+		| (attacks_bb<CANON	>(s, occupied)		& pieces(CANON))
 		| (attacks_bb<ELEPHANT  >(s, occupied)	& pieces(ELEPHANT))
-		| (attacks_from<ADVISOR	>(s)			& pieces(ADVISOR))
-		| (attacks_from<GENERAL	>(s)			& pieces(GENERAL));
+		| (attacks_from<ADVISOR	>(s, WHITE)		& pieces(WHITE, ADVISOR))
+		| (attacks_from<ADVISOR	>(s, BLACK)		& pieces(BLACK, ADVISOR))
+		| (attacks_from<GENERAL	>(s, WHITE)		& pieces(WHITE, GENERAL))
+		| (attacks_from<GENERAL	>(s, BLACK)		& pieces(BLACK, GENERAL));
 }
 
 /// Position::legal() tests whether a pseudo-legal move is legal
@@ -569,16 +570,21 @@ bool Position::gives_check(Move m) const
 	Square from = from_sq(m);
 	Square to = to_sq(m);
 
+	if (gives_canon_check(m))
+	{
+		return true;
+	}
+	// Is there a discovered check?
+	else if ((discovered_check_candidates() & from))
+	{
+		if (!aligned(from, to, square<GENERAL>(~sideToMove)))
+			return true;
+		else
+			return false;
+	}
+
 	// Is there a direct check?
 	if (st->checkSquares[type_of(piece_on(from))] & to)
-		return true;
-
-	if (gives_canon_check(m))
-		return true;
-
-	// Is there a discovered check?
-	else if ((discovered_check_candidates() & from)
-		&& !aligned(from, to, square<GENERAL>(~sideToMove)))
 		return true;
 
 	return false;
@@ -598,7 +604,10 @@ bool Position::gives_canon_check(Move m) const
 	if (type_of(piece_on(from)) == CANON)
 		canons = canons ^ from | to;
 
-	return attackers & canons;
+	if (!aligned(from, to, square<GENERAL>(~sideToMove)))
+		return (attackers & canons);
+
+	return false;
 }
 
 /// Tests whether a pseudo-legal move receives a canon check

@@ -40,10 +40,8 @@ namespace
 				b = pos.attacks_from<CANON>(from) & target & pos.pieces(~pos.side_to_move());
 				b |= pos.attacks_from<CHARIOT>(from) & target & (~pos.pieces());
 			}
-			else if (Pt == SOLDIER)
-				b = pos.attacks_from<SOLDIER>(from, us) & target;
 			else
-				b = pos.attacks_from<Pt>(from) & target;
+				b = pos.attacks_from(pos.piece_on(from), from) & target;
 
 			if (Checks)
 				b &= pos.check_squares(Pt);
@@ -72,7 +70,7 @@ namespace
 		if (Type != QUIET_CHECKS && Type != EVASIONS)
 		{
 			Square ksq = pos.square<GENERAL>(Us);
-			Bitboard b = pos.attacks_from<GENERAL>(ksq) & target;
+			Bitboard b = pos.attacks_from<GENERAL>(ksq, Us) & target;
 			while (b)
 				*moveList++ = make_move(ksq, pop_lsb(&b));
 		}
@@ -123,12 +121,11 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 		PieceType pt = type_of(pos.piece_on(from));
 
 		Bitboard b;
-		if (pt == SOLDIER)
-			b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
-		else if (pt == CANON)
+
+		if (pt == CANON)
 			b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
 		else
-			b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
+			b = pos.attacks_from(pos.piece_on(from), from) & ~pos.pieces();
 
 		while (b)
 		{
@@ -154,12 +151,10 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 			PieceType pt = type_of(pos.piece_on(from));
 
 			Bitboard b;
-			if (pt == SOLDIER)
-				b = pos.attacks_from<SOLDIER>(from, us)  & ~pos.pieces();
-			else if (pt == CANON)
+			if (pt == CANON)
 				b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
 			else
-				b = pos.attacks_from(Piece(pt), from) & ~pos.pieces();
+				b = pos.attacks_from(pos.piece_on(from), from) & ~pos.pieces();
 
 			while (b)
 			{
@@ -195,7 +190,7 @@ ExtMove* generate<EVASIONS>(const Position& pos, ExtMove* moveList)
 	}
 
 	// Generate evasions for king, capture and non capture moves
-	Bitboard b = pos.attacks_from<GENERAL>(ksq) & ~pos.pieces(us) & ~sliderAttacks;
+	Bitboard b = pos.attacks_from<GENERAL>(ksq, us) & ~pos.pieces(us) & ~sliderAttacks;	
 	while (b)
 		*moveList++ = make_move(ksq, pop_lsb(&b));
 

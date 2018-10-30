@@ -233,6 +233,18 @@ inline Bitboard Position::attacks_from<SOLDIER>(Square s, Color c) const
 	return StepAttacksBB[make_piece(c, SOLDIER)][s];
 }
 
+template<>
+inline Bitboard Position::attacks_from<ADVISOR>(Square s, Color c) const
+{
+	return StepAttacksBB[make_piece(c, ADVISOR)][s];
+}
+
+template<>
+inline Bitboard Position::attacks_from<GENERAL>(Square s, Color c) const
+{
+	return StepAttacksBB[make_piece(c, GENERAL)][s];
+}
+
 inline Bitboard Position::attacks_from(Piece pc, Square s) const
 {
 	return attacks_bb(pc, s, byTypeBB[ALL_PIECES]);
