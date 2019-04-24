@@ -28,7 +28,7 @@ namespace
 				if (pos.discovered_check_candidates() & from)
 					continue;
 
-				// check if a piece at 'from' is a canon which faces to the King
+				// canons facing to King
 				if (pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON) & from)
 					continue;
 			}
@@ -46,8 +46,24 @@ namespace
 			if (Checks)
 				b &= pos.check_squares(Pt);
 
-			while (b)
-				*moveList++ = make_move(from, pop_lsb(&b));
+			while (b) {
+				Move m = make_move(from, pop_lsb(&b));
+
+				bool moveExisted = false;
+				if (Checks) {
+					// check if the move already generated
+					Bitboard canonsFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
+					while (canonsFacingToKing) {
+						if (between_bb(pop_lsb(&canonsFacingToKing), pos.square<GENERAL>(~us)) & to_sq(m)) {
+							moveExisted = true;
+							break;
+						}
+					}
+				}
+				if (moveExisted) continue;
+
+				*moveList++ = m;
+			}
 		}
 
 		return moveList;
@@ -123,7 +139,7 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 		Bitboard b;
 
 		if (pt == CANON)
-			b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+			b = pos.attacks_from<CHARIOT>(from) & ~pos.pieces();
 		else
 			b = pos.attacks_from(pos.piece_on(from), from) & ~pos.pieces();
 
@@ -140,10 +156,10 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 		}
 	}
 
-	Bitboard canonFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
-	if (canonFacingToKing)
+	Bitboard canonsFacingToKing = pos.attacks_from<CHARIOT>(pos.square<GENERAL>(~us)) & pos.pieces(us, CANON);
+	while (canonsFacingToKing)
 	{
-		Square canonFacingToKingSq = lsb(canonFacingToKing);
+		Square canonFacingToKingSq = pop_lsb(&canonsFacingToKing);
 		Bitboard pieces = pos.pieces(us) ^ canonFacingToKingSq;
 		while (pieces)
 		{
@@ -152,14 +168,14 @@ ExtMove* generate<QUIET_CHECKS>(const Position& pos, ExtMove* moveList)
 
 			Bitboard b;
 			if (pt == CANON)
-				b = pos.attacks_from(Piece(CHARIOT), from) & ~pos.pieces();
+				b = pos.attacks_from<CHARIOT>(from) & ~pos.pieces();
 			else
 				b = pos.attacks_from(pos.piece_on(from), from) & ~pos.pieces();
 
 			while (b)
 			{
 				Square to = pop_lsb(&b);
-				if (aligned(pos.square<GENERAL>(~us), canonFacingToKingSq, to))
+				if (between_bb(pos.square<GENERAL>(~us), canonFacingToKingSq) & to)
 					*moveList++ = make_move(from, to);
 			}
 		}

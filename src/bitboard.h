@@ -442,8 +442,13 @@ inline Square lsb(Bitboard b)
 		return (Square)idx1;
 	}
 
-	_BitScanForward64(&idx2, b.v.m128i_u64[1]);
-	return (Square)(idx2 + 64);
+	if (b.v.m128i_u64[1])
+	{
+		_BitScanForward64(&idx2, b.v.m128i_u64[1]);
+		return (Square)(idx2 + 64);
+	}
+
+	return (Square)0;
 }
 
 inline Square msb(Bitboard b)
